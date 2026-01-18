@@ -235,37 +235,42 @@ export class BookingService {
     }
 
     async getStats() {
-        const todayStart = startOfDay(new Date());
-        const todayEnd = endOfDay(new Date());
-        console.log(`[BookingService] getStats called. Range: ${todayStart.toISOString()} - ${todayEnd.toISOString()}`);
+        try {
+            const todayStart = startOfDay(new Date());
+            const todayEnd = endOfDay(new Date());
+            console.log(`[BookingService] getStats called. Range: ${todayStart.toISOString()} - ${todayEnd.toISOString()}`);
 
-        const [totalAppts, checkedInAppts, activeSurgeries, recentLogs] = await Promise.all([
-            this.prisma.appointment.count({
-                where: { slot: { startDateTime: { gte: todayStart, lte: todayEnd } } }
-            }),
-            this.prisma.appointment.count({
-                where: { status: 'CHECKED_IN', slot: { startDateTime: { gte: todayStart, lte: todayEnd } } }
-            }),
-            this.prisma.surgeryCase.count({
-                where: { status: { in: ['ADMITTED', 'IN_SURGERY', 'POST_OP'] } }
-            }),
-            this.prisma.auditLog.findMany({
-                take: 10,
-                orderBy: { createdAt: 'desc' }
-            })
-        ]);
+            const [totalAppts, checkedInAppts, activeSurgeries, recentLogs] = await Promise.all([
+                this.prisma.appointment.count({
+                    where: { slot: { startDateTime: { gte: todayStart, lte: todayEnd } } }
+                }),
+                this.prisma.appointment.count({
+                    where: { status: 'CHECKED_IN', slot: { startDateTime: { gte: todayStart, lte: todayEnd } } }
+                }),
+                this.prisma.surgeryCase.count({
+                    where: { status: { in: ['ADMITTED', 'IN_SURGERY', 'POST_OP'] } }
+                }),
+                this.prisma.auditLog.findMany({
+                    take: 10,
+                    orderBy: { createdAt: 'desc' }
+                })
+            ]);
 
-        console.log(`[BookingService] getStats result - Total: ${totalAppts}, CheckedIn: ${checkedInAppts}, ActiveSurgeries: ${activeSurgeries}`);
+            console.log(`[BookingService] getStats result - Total: ${totalAppts}, CheckedIn: ${checkedInAppts}, ActiveSurgeries: ${activeSurgeries}`);
 
-        return {
-            today: {
-                totalAppointments: totalAppts,
-                checkedIn: checkedInAppts,
-                progress: totalAppts > 0 ? Math.round((checkedInAppts / totalAppts) * 100) : 0
-            },
-            activeSurgeries,
-            recentActivity: recentLogs
-        };
+            return {
+                today: {
+                    totalAppointments: totalAppts,
+                    checkedIn: checkedInAppts,
+                    progress: totalAppts > 0 ? Math.round((checkedInAppts / totalAppts) * 100) : 0
+                },
+                activeSurgeries,
+                recentActivity: recentLogs
+            };
+        } catch (error) {
+            console.error('[BookingService] Error in getStats:', error);
+            throw error;
+        }
     }
 
     async getAuditLogs(limit: number = 50, offset: number = 0) {
