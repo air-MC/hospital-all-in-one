@@ -54,6 +54,27 @@ async function main() {
                 }
             });
         }
+
+        // --- NEW: Add Schedule Rules for 1-5 (Mon-Fri) ---
+        for (let day = 1; day <= 5; day++) {
+            const existingRule = await prisma.scheduleRule.findFirst({
+                where: { departmentId: dept.id, dayOfWeek: day }
+            });
+            if (!existingRule) {
+                await prisma.scheduleRule.create({
+                    data: {
+                        departmentId: dept.id,
+                        dayOfWeek: day,
+                        startTime: '09:00',
+                        endTime: '18:00',
+                        breakStart: '12:00',
+                        breakEnd: '13:00',
+                        slotDuration: 30,
+                        capacityPerSlot: 5
+                    }
+                });
+            }
+        }
     }
 
     // Fetch 'Oegwa' for the demo surgery case
