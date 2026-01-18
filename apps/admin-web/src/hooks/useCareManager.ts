@@ -60,3 +60,7 @@ export const updateSurgeryStatus = async (surgeryId: string, status: string) => 
 export const assignWard = async (surgeryId: string, roomNumber: string) => {
     return axios.patch(`${API_URL}/care/surgeries/${surgeryId}`, { roomNumber });
 };
+
+export const searchPatients = async (query: string) => {
+    return axios.get(`${API_URL}/hospital/search?query=${query}`).then(res => res.data);
+};

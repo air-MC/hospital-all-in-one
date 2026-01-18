@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { registerSurgery, getSurgeryTypes, getActiveSurgeries } from '../hooks/useCareManager';
+import { registerSurgery, getSurgeryTypes, getActiveSurgeries, searchPatients } from '../hooks/useCareManager';
 import type { CreateSurgeryDto } from '../hooks/useCareManager';
 import { DateTime } from 'luxon';
 import useSWR from 'swr';
@@ -13,10 +13,15 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
 
     // Form State
     const [selectedTypeId, setSelectedTypeId] = useState<string>('');
-    const [surgeryDateTime, setSurgeryDateTime] = useState(DateTime.now().plus({ days: 7 }).toISO() || '');
+    const [surgeryDateTime, setSurgeryDateTime] = useState(DateTime.now().plus({ days: 7 }).set({ hour: 9, minute: 0 }).toISO() || '');
+
+    // Patient Search State
+    const [patientSearch, setPatientSearch] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [selectedPatient, setSelectedPatient] = useState<any>(null);
 
     const [formData, setFormData] = useState<CreateSurgeryDto>({
-        patientId: 'patient_web_demo',
+        patientId: '',
         doctorId: 'doc_test_01',
         surgeryTypeId: '',
         surgeryDate: '',
@@ -24,6 +29,31 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
         dischargeDate: '',
         diagnosis: ''
     });
+
+    // Handle Patient Search
+    useEffect(() => {
+        if (patientSearch.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            try {
+                const results = await searchPatients(patientSearch);
+                setSearchResults(results);
+            } catch (e) {
+                console.error("Patient search failed", e);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [patientSearch]);
+
+    // Handle Patient Selection
+    const handleSelectPatient = (p: any) => {
+        setSelectedPatient(p);
+        setFormData(prev => ({ ...prev, patientId: p.id }));
+        setPatientSearch(p.name);
+        setSearchResults([]);
+    };
 
     // Effect: Auto-calculate dates when Type or Date changes
     useEffect(() => {
@@ -53,11 +83,15 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
         e.preventDefault();
         setLoading(true);
         try {
+            if (!formData.patientId) throw new Error('환자를 선택해주세요.');
             if (!selectedTypeId) throw new Error('수술/시술 종류를 선택해주세요.');
             await registerSurgery(formData);
 
             alert('✅ 수술 및 입원 예약이 완료되었습니다.\n[통합 케어 현황] 메뉴에서 케어 플랜을 관리할 수 있습니다.');
             setSelectedTypeId('');
+            setSelectedPatient(null);
+            setPatientSearch('');
+            setFormData(prev => ({ ...prev, patientId: '', surgeryTypeId: '' }));
         } catch (error) {
             const err = error as any;
             alert(`❌ 등록 실패: ${err.response?.data?.message || err.message}`);
@@ -80,33 +114,75 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                     <div>
                         <h3 className="text-lg font-bold text-slate-800">📝 신규 수술/입원 등록</h3>
                         <p className="text-sm text-slate-500 mt-1">
-                            수술 일정과 입원실을 배정하면 초기 케어 플랜이 자동 생성됩니다.
+                            환자를 검색하고 수술 종류를 선택하여 일정을 확정합니다.
                         </p>
                     </div>
                 </div>
 
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        {/* 1. Patient Info */}
-                        <div className="grid grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-xl border border-dashed border-slate-200">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">환자 ID</label>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">P</div>
+                        {/* 1. Patient Selection */}
+                        <div className="relative">
+                            <label className="absolute -top-3 left-4 bg-white px-2 text-sm font-bold text-indigo-600 z-10">① 환자 검색 및 선택</label>
+                            <div className="p-6 border-2 border-indigo-100 rounded-xl bg-indigo-50/10 hover:border-indigo-200 transition-colors">
+                                <div className="relative">
                                     <input
-                                        type="text" value={formData.patientId} readOnly
-                                        className="block w-full text-sm font-medium bg-transparent border-none focus:ring-0 text-slate-700 p-0"
+                                        type="text"
+                                        placeholder="환자 이름 또는 휴대폰 번호 검색"
+                                        value={patientSearch}
+                                        onChange={(e) => {
+                                            setPatientSearch(e.target.value);
+                                            if (selectedPatient) setSelectedPatient(null);
+                                        }}
+                                        className="w-full bg-white border border-slate-200 rounded-lg p-3 shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-medium"
                                     />
+                                    {searchResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto">
+                                            {searchResults.map(p => (
+                                                <div
+                                                    key={p.id}
+                                                    onClick={() => handleSelectPatient(p)}
+                                                    className="p-4 hover:bg-slate-50 cursor-pointer border-b last:border-0 flex justify-between items-center"
+                                                >
+                                                    <div>
+                                                        <span className="font-bold text-slate-800">{p.name}</span>
+                                                        <span className="ml-3 text-sm text-slate-500">{p.phone}</span>
+                                                    </div>
+                                                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded">선택</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
+                                {selectedPatient && (
+                                    <div className="mt-3 flex items-center gap-3 bg-white p-3 rounded-lg border border-indigo-200 animate-in zoom-in duration-300">
+                                        <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-black text-xl">
+                                            {selectedPatient.name[0]}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-slate-800">{selectedPatient.name} <span className="text-xs font-normal text-slate-500">ID: {selectedPatient.id.slice(0, 8)}</span></div>
+                                            <div className="text-xs text-slate-500 tracking-tighter">{selectedPatient.phone} | {selectedPatient.birthDate ? DateTime.fromISO(selectedPatient.birthDate).toFormat('yyyy-MM-dd') : '생일미상'}</div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setSelectedPatient(null); setPatientSearch(''); setFormData(prev => ({ ...prev, patientId: '' })) }}
+                                            className="ml-auto text-slate-300 hover:text-rose-500"
+                                        >✕</button>
+                                    </div>
+                                )}
+                                <p className="mt-3 text-[10px] text-slate-400">
+                                    💡 환자가 앱에서 회원가입을 완료하면 이곳에서 검색이 가능해집니다.
+                                </p>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">담당의 ID</label>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">Dr</div>
-                                    <input
-                                        type="text" value={formData.doctorId} readOnly
-                                        className="block w-full text-sm font-medium bg-transparent border-none focus:ring-0 text-slate-700 p-0"
-                                    />
+                        </div>
+
+                        {/* Existing 2. Doctor Info (Simplified) */}
+                        <div className="grid grid-cols-1 bg-slate-50/50 p-4 rounded-xl border border-dashed border-slate-200">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs shrink-0">Dr</div>
+                                <div className="flex-1">
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">담당의 (Default)</label>
+                                    <div className="text-sm font-medium text-slate-700">관리자 (doc_test_01)</div>
                                 </div>
                             </div>
                         </div>
