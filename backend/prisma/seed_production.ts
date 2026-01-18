@@ -1,7 +1,46 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 async function main() {
-    console.log('💉 Safe Seeding Surgery Types (Production)...');
+    console.log('💉 Safe Seeding Surgery Types & System Doctors (Production)...');
+
+    // 1. Ensure a Hospital exists (for foreign keys)
+    let hospital = await prisma.hospital.findFirst();
+    if (!hospital) {
+        hospital = await prisma.hospital.create({
+            data: {
+                id: 'hosp_test_01',
+                name: '테스트 병원',
+                address: '서울시',
+                phone: '02-1234-5678'
+            }
+        });
+    }
+
+    // 2. Ensure General Department for Admin/System doctors
+    let dept = await prisma.department.findUnique({ where: { id: 'dept_test_01' } });
+    if (!dept) {
+        dept = await prisma.department.create({
+            data: {
+                id: 'dept_test_01',
+                hospitalId: hospital.id,
+                name: '일반행정/시스템'
+            }
+        });
+    }
+
+    // 3. Ensure Default Admin Doctor (doc_test_01) used by SurgeryManager
+    let doctor = await prisma.doctor.findUnique({ where: { id: 'doc_test_01' } });
+    if (!doctor) {
+        doctor = await prisma.doctor.create({
+            data: {
+                id: 'doc_test_01',
+                departmentId: dept.id,
+                name: '시스템관리자'
+            }
+        });
+    }
+
+    // 4. Seeding Surgery Types
     const types = [
         { id: 'ophthal_cataract', name: '백내장 수술 (안과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true },
         { id: 'ophthal_glaucoma', name: '녹내장 수술 (안과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 2, isPreOpExamRequired: true },
@@ -23,6 +62,6 @@ async function main() {
             create: t
         });
     }
-    console.log('✅ Production Surgery Types Seeded Successfully.');
+    console.log('✅ Production Data Synchronized Successfully.');
 }
 main().catch(e => console.error(e)).finally(() => prisma.$disconnect());
