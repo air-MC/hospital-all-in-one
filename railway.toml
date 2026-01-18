@@ -1,8 +1,8 @@
-# Railway deployment configuration - Optimized Structure
+# Railway deployment configuration - Final Correct Structure
 [build]
 builder = "NIXPACKS"
-buildCommand = "cd backend && npm install && npx prisma generate && npm run build && npx prisma migrate deploy"
+buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "cd backend && node ./dist/main.js"
+startCommand = "cd backend && npx prisma migrate deploy && node ./dist/main.js"
 healthCheckPath = "/"
