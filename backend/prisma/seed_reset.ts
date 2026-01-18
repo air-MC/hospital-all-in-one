@@ -172,6 +172,51 @@ async function main() {
         }
     });
 
+    // 8. Create some Slots and Appointments for TODAY to show stats
+    console.log('📅 Creating today\'s appointments for stats...');
+    const slotStart = new Date();
+    slotStart.setHours(10, 0, 0, 0);
+    const slotEnd = new Date(slotStart);
+    slotEnd.setMinutes(30);
+
+    const slot = await prisma.slot.create({
+        data: {
+            departmentId: dept.id,
+            doctorId: doctor.id,
+            startDateTime: slotStart,
+            endDateTime: slotEnd,
+            capacity: 5,
+            bookedCount: 1,
+            status: 'OPEN'
+        }
+    });
+
+    await prisma.appointment.create({
+        data: {
+            slotId: slot.id,
+            patientId: patient.id,
+            doctorsId: doctor.id,
+            status: 'CHECKED_IN',
+            type: 'OUTPATIENT_FIRST'
+        }
+    });
+
+    // 9. Add a SurgeryCase in 'ADMITTED' status for stats
+    await prisma.surgeryCase.update({
+        where: { id: surgeryCase.id },
+        data: { status: 'ADMITTED' }
+    });
+
+    // 10. Add some Audit Logs
+    await prisma.auditLog.create({
+        data: {
+            entityTable: 'Appointment',
+            entityId: 'system-seed',
+            action: 'CREATE',
+            newValue: 'System initialized'
+        }
+    });
+
     console.log('🎉 Data Reset Complete!');
 }
 
