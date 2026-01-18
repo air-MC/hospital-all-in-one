@@ -1,8 +1,8 @@
-# Railway deployment configuration - Smart Path Auto-Discovery
+# Railway deployment configuration - Final Completion
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "node $(find backend/dist -name main.js | head -n 1)"
+startCommand = "cd backend && npx prisma migrate deploy && (npx prisma db seed || true) && node $(find dist -name main.js | head -n 1)"
 healthCheckPath = "/"
