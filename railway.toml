@@ -1,8 +1,8 @@
-# Railway deployment configuration - Final Correct Structure
+# Railway deployment configuration - Diagnostic Mode
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "cd backend && npx prisma migrate deploy && node ./dist/main.js"
+startCommand = "cd backend && echo '📁 Current Directory:' && pwd && echo '🔍 Dist Content:' && ls -R dist && (npx prisma migrate deploy || echo '⚠️ Migration failed but continuing...') && node ./dist/main.js"
 healthCheckPath = "/"
