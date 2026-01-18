@@ -21,9 +21,15 @@ export class HospitalService {
 
     async findPatientByPhone(phone: string) {
         const normalized = phone.replace(/[^0-9]/g, '');
-        console.log(`[HospitalService] Looking up patient by normalized phone: ${normalized}`);
+        console.log(`[HospitalService] Looking up patient. Input: ${phone}, Normalized: ${normalized}`);
+
         return this.prisma.patient.findFirst({
-            where: { phone: normalized }
+            where: {
+                OR: [
+                    { phone: normalized },
+                    { phone: phone }
+                ]
+            }
         });
     }
 

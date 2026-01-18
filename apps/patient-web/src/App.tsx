@@ -6,18 +6,11 @@ import { NotificationModal } from './components/NotificationModal'
 import { useNotifications } from './hooks/useCareManager'
 import clsx from 'clsx'
 
-function App() {
-  const [patientId, setPatientId] = useState<string | null>(null)
+const PatientHome = ({ patientId }: { patientId: string }) => {
   const [tab, setTab] = useState<'BOOKING' | 'CARE'>('BOOKING')
   const [showNoti, setShowNoti] = useState(false)
-
-  const { notifications, markRead } = useNotifications(patientId || '');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { notifications, markRead } = useNotifications(patientId);
   const unreadCount = notifications ? notifications.filter((n: any) => !n.isRead).length : 0;
-
-  if (!patientId) {
-    return <LoginScreen onLogin={setPatientId} />
-  }
 
   return (
     <div className="max-w-md mx-auto bg-slate-50 min-h-screen shadow-2xl overflow-hidden border-x border-slate-200 relative font-sans">
@@ -28,7 +21,6 @@ function App() {
         onRead={markRead}
       />
 
-      {/* Content */}
       <div className="h-full overflow-y-auto custom-scrollbar pt-0 text-slate-900">
         {tab === 'BOOKING' ?
           <BookingScreen patientId={patientId} /> :
@@ -36,7 +28,6 @@ function App() {
         }
       </div>
 
-      {/* Bottom Nav */}
       <div className="fixed max-w-md mx-auto bottom-6 left-6 right-6 bg-white/90 backdrop-blur-xl border border-white/20 rounded-full flex justify-around p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-30">
         <button
           onClick={() => setTab('BOOKING')}
@@ -56,7 +47,17 @@ function App() {
         </button>
       </div>
     </div>
-  )
+  );
+};
+
+function App() {
+  const [patientId, setPatientId] = useState<string | null>(null)
+
+  if (!patientId) {
+    return <LoginScreen onLogin={setPatientId} />
+  }
+
+  return <PatientHome patientId={patientId} />;
 }
 
 export default App

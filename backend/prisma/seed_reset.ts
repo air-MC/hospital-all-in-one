@@ -69,7 +69,7 @@ async function main() {
         patient = await prisma.patient.create({
             data: {
                 name: '김환자',
-                phone: '010-1234-5678',
+                phone: '01012345678',
                 birthDate: new Date('1980-01-01'),
                 gender: 'M'
             }

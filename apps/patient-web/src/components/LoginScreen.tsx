@@ -2,7 +2,9 @@ import { useState } from 'react'
 import axios from 'axios'
 import clsx from 'clsx'
 
-const API_URL = 'http://localhost:3000';
+import { getApiUrl } from '../utils/api';
+
+const API_URL = getApiUrl();
 
 export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
     const [view, setView] = useState<'PHONE' | 'REGISTER'>('PHONE')
@@ -26,17 +28,18 @@ export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
         setError('');
 
         try {
-            const res = await axios.post(`${API_URL}/hospital/login`, { phone });
+            const res = await axios.post(`${API_URL}/hospital/login`, { phone }, { timeout: 5000 });
             if (res.data) {
-                // Patient found
                 onLogin(res.data.id);
             } else {
-                // Patient not found, go to register
                 setView('REGISTER');
             }
-        } catch (err) {
-            console.error(err);
-            setError('로그인 중 오류가 발생했습니다.');
+        } catch (err: any) {
+            console.error('[Login] Request failed:', err);
+            const status = err.response?.status;
+            const message = err.message || 'Network Error';
+            setError(`로그인 오류 (${status || message}). API 주소가 올바른지 확인해주세요.`);
+            console.log(`[Diagnostic] API_URL being used: ${API_URL}`);
         } finally {
             setIsLoading(false);
         }
@@ -98,7 +101,10 @@ export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
                             </div>
 
                             {error && (
-                                <p className="text-rose-500 text-xs font-bold text-center animate-shake">{error}</p>
+                                <div className="space-y-1">
+                                    <p className="text-rose-500 text-xs font-bold text-center animate-shake">{error}</p>
+                                    <p className="text-[10px] text-slate-400 text-center opacity-70">Target: {API_URL}</p>
+                                </div>
                             )}
 
                             <button

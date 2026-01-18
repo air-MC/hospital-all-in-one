@@ -4,14 +4,8 @@ import axios from 'axios'
 import { DateTime } from 'luxon'
 import clsx from 'clsx'
 
-const getApiUrl = () => {
-    let url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    url = url.replace(/\/$/, '');
-    if (!url.startsWith('http')) {
-        url = (url.includes('localhost') || url.includes('127.0.0.1')) ? `http://${url}` : `https://${url}`;
-    }
-    return url;
-};
+import { getApiUrl } from '../utils/api';
+
 const API_URL = getApiUrl();
 
 export const BookingScreen = ({ patientId }: { patientId: string }) => {

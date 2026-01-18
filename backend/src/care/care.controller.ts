@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Body, Query, BadRequestException } from '@nestjs/common';
 import { CareService } from './care.service';
 import { CreateSurgeryDto } from './dto/create-surgery.dto';
 
@@ -69,7 +69,7 @@ export class CareController {
         return this.careService.addCareItem(dto);
     }
 
-    @Post('items/:id/delete') // Using POST for delete to keep it simple or DELETE method
+    @Delete('items/:id')
     async deleteItem(@Param('id') id: string) {
         return this.careService.deleteCareItem(id);
     }

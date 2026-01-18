@@ -3,7 +3,9 @@ import useSWR from 'swr';
 import axios from 'axios';
 import { DateTime } from 'luxon';
 
-const API_URL = 'http://localhost:3000';
+import { getApiUrl } from '../utils/api';
+
+const API_URL = getApiUrl();
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export const useDailyCare = (patientId: string, date: Date) => {
@@ -59,5 +61,5 @@ export const addCareItem = async (dto: any) => {
 };
 
 export const deleteCareItem = async (id: string) => {
-    return axios.post(`${API_URL}/care/items/${id}/delete`);
+    return axios.delete(`${API_URL}/care/items/${id}`);
 };

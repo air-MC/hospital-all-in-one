@@ -7,14 +7,8 @@ import clsx from 'clsx';
 import { DndContext, useDraggable, useDroppable, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-const getApiUrl = () => {
-    let url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    url = url.replace(/\/$/, '');
-    if (!url.startsWith('http')) {
-        url = (url.includes('localhost') || url.includes('127.0.0.1')) ? `http://${url}` : `https://${url}`;
-    }
-    return url;
-};
+import { getApiUrl } from '../utils/api';
+
 const API_URL = getApiUrl();
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
@@ -299,7 +293,7 @@ const BulkAddModal = ({ isOpen, onClose, slot, onSave, existingItems, onDeleteIt
 export const CarePlanEditor = ({ surgery, onClose }: { surgery: any, onClose?: () => void }) => {
     // 1. Data Fetching
     const { data: allItems, mutate } = useSWR(
-        surgery.carePlan?.id ? `${API_URL}/care/plans/${surgery.carePlan.id}/items` : null,
+        (surgery.carePlan?.id || surgery.id) ? `${API_URL}/care/plans/${surgery.carePlan?.id || surgery.id}/items` : null,
         fetcher,
         { refreshInterval: 5000 }
     );

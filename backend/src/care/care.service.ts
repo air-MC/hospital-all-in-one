@@ -512,7 +512,13 @@ export class CareService {
         return this.prisma.carePlanItem.update({
             where: { id },
             data: {
+                title: data.title,
+                description: data.description,
                 scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
+                category: data.category,
+                priority: data.priority,
+                isCompleted: data.isCompleted,
+                metadata: data.metadata || undefined
             }
         });
     }

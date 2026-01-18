@@ -2,7 +2,9 @@ import useSWR from 'swr';
 import axios from 'axios';
 
 
-const API_URL = 'http://localhost:3000';
+import { getApiUrl } from '../utils/api';
+
+const API_URL = getApiUrl();
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export const useVisitGuide = (patientId: string) => {
