@@ -1,8 +1,8 @@
-# Railway deployment configuration - Safety Mode
+# Railway deployment configuration - Final Path Fix
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "cd backend && node ./dist/main.js"
+startCommand = "node backend/dist/main.js"
 healthCheckPath = "/"
