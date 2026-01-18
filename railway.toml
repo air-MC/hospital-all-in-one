@@ -1,3 +1,4 @@
+# Railway deployment configuration - Triggering build
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
