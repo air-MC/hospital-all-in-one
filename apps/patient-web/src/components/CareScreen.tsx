@@ -255,8 +255,17 @@ export const CareScreen = ({ patientId, onOpenNoti, unreadCount }: CareScreenPro
                                     );
                                 }
 
-                                const isCritical = item.priority === 'CRITICAL' || ['INJECTION', 'EXAM'].includes(item.category);
-                                const icon = item.category === 'INJECTION' ? '💉' : item.category === 'EXAM' ? '🩸' : '🔔';
+                                const isCritical = item.priority === 'CRITICAL' || ['INJECTION', 'EXAM', 'TREATMENT'].includes(item.category);
+
+                                let icon = '🔔';
+                                if (item.category === 'INJECTION') icon = '💉';
+                                else if (item.category === 'EXAM') icon = '🩸';
+                                else if (item.category === 'TREATMENT') icon = '🩺';
+                                else if (item.category === 'MEAL') icon = '🍚';
+                                else if (item.category === 'MEDICATION') icon = '💊';
+
+                                // Surgery Special override
+                                if (item.title.includes('수술')) icon = '🏥';
 
                                 return (
                                     <div key={item.id} className={clsx("bg-white rounded-2xl p-5 shadow-sm border relative transition-all duration-300", isCritical ? "border-l-4 border-l-rose-400" : "border-slate-100")}>

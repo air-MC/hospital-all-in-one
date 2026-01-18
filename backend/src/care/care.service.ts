@@ -169,6 +169,16 @@ export class CareService {
             scheduledAt: sDate
         });
 
+        // [New] Actual Surgery Event at Exact Time
+        items.push({
+            carePlanId,
+            category: CareCategory.TREATMENT,
+            priority: 'CRITICAL',
+            title: `🩺 ${type.name} (수술 시작)`,
+            description: '수술실로 이동합니다. 보호자분께서는 대기실이나 병실에서 대기해주세요.',
+            scheduledAt: surgeryDate
+        });
+
         // --- Post-Op Phase (Recovery) ---
         const recoveryDays = type.defaultStayDays || 1;
         for (let i = 1; i <= recoveryDays; i++) {
