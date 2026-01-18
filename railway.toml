@@ -1,8 +1,8 @@
-# Railway deployment configuration - Final Fix for Schema Drift
+# Railway deployment configuration - Final Data Population
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "cd backend && npx prisma db push --accept-data-loss && (npx prisma db seed || true) && node $(find dist -name main.js | head -n 1)"
+startCommand = "cd backend && npx prisma db push --accept-data-loss && npx prisma db seed && node $(find dist -name main.js | head -n 1)"
 healthCheckPath = "/"
