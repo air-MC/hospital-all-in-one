@@ -7,7 +7,15 @@ import clsx from 'clsx';
 import { DndContext, useDraggable, useDroppable, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiUrl = () => {
+    let url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    url = url.replace(/\/$/, '');
+    if (!url.startsWith('http')) {
+        url = (url.includes('localhost') || url.includes('127.0.0.1')) ? `http://${url}` : `https://${url}`;
+    }
+    return url;
+};
+const API_URL = getApiUrl();
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 // Draggable Item Component
