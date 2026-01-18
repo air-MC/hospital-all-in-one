@@ -1,7 +1,7 @@
 # Railway deployment configuration - Final Data Population
 [build]
 builder = "NIXPACKS"
-buildCommand = "cd backend && npm install && npx prisma generate && npm run build && npx ts-node prisma/seed_surgery_types.ts"
+buildCommand = "cd backend && npm install && npx prisma generate && npm run build && npx ts-node prisma/seed_production.ts"
 
 [deploy]
 startCommand = "cd backend && node $(find dist -name main.js | head -n 1)"

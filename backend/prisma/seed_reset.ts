@@ -97,17 +97,32 @@ async function main() {
         });
     }
 
-    // 4. Ensure Surgery Type
-    let surgeryType = await prisma.surgeryType.findFirst({ where: { name: '위암 수술' } });
-    if (!surgeryType) {
-        surgeryType = await prisma.surgeryType.create({
-            data: {
-                name: '위암 수술',
-                type: 'SURGERY',
-                defaultStayDays: 5
-            }
+    // 4. Ensure Surgery Types
+    console.log('💉 Seeding Surgery Types...');
+    const surgeryTypesList = [
+        { id: 'ophthal_cataract', name: '백내장 수술 (안과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true },
+        { id: 'ophthal_glaucoma', name: '녹내장 수술 (안과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 2, isPreOpExamRequired: true },
+        { id: 'ophthal_lasik', name: '라식/라섹 (안과)', type: 'PROCEDURE', isAdmissionRequired: false, defaultStayDays: 0, isPreOpExamRequired: false },
+        { id: 'ophthal_injection', name: '유리체 주사 (안과)', type: 'PROCEDURE', isAdmissionRequired: false, defaultStayDays: 0, isPreOpExamRequired: false },
+        { id: 'ortho_knee_replace', name: '무릎 인공관절 치환술 (정형외과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 5, isPreOpExamRequired: true },
+        { id: 'ortho_shoulder', name: '어깨 관절경 (정형외과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 2, isPreOpExamRequired: true },
+        { id: 'ortho_manual', name: '도수치료 (정형외과)', type: 'PROCEDURE', isAdmissionRequired: false, defaultStayDays: 0, isPreOpExamRequired: false },
+        { id: 'ortho_injection', name: '관절 주사 (정형외과)', type: 'PROCEDURE', isAdmissionRequired: false, defaultStayDays: 0, isPreOpExamRequired: false },
+        { id: 'internal_gastroscopy', name: '위내시경 (내과)', type: 'PROCEDURE', isAdmissionRequired: false, defaultStayDays: 0, isPreOpExamRequired: false },
+        { id: 'internal_colonoscopy', name: '대장내시경 (내과)', type: 'PROCEDURE', isAdmissionRequired: false, defaultStayDays: 0, isPreOpExamRequired: true },
+        { id: 'internal_polyp', name: '용종 절제술 (내과)', type: 'PROCEDURE', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true },
+        { id: 'internal_stomach_cancer', name: '위암 수술 (내과/외과)', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 5, isPreOpExamRequired: true }
+    ];
+
+    for (const st of surgeryTypesList) {
+        await (prisma as any).surgeryType.upsert({
+            where: { id: st.id },
+            update: st,
+            create: st
         });
     }
+
+    const surgeryType = await (prisma as any).surgeryType.findUnique({ where: { id: 'internal_stomach_cancer' } });
 
     // 5. Create Surgery Case (Tomorrow)
     // Logic: Tomorrow 2 PM
