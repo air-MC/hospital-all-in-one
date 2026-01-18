@@ -15,6 +15,16 @@ export class HospitalController {
         return this.hospitalService.getDoctors(departmentId);
     }
 
+    @Post('departments')
+    async createDepartment(@Body('name') name: string) {
+        return this.hospitalService.createDepartment(name);
+    }
+
+    @Post('doctors')
+    async createDoctor(@Body() body: { name: string, departmentId: string }) {
+        return this.hospitalService.createDoctor(body.name, body.departmentId);
+    }
+
     @Post('login')
     async login(@Body('phone') phone: string) {
         return this.hospitalService.findPatientByPhone(phone);

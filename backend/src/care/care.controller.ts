@@ -84,6 +84,11 @@ export class CareController {
         return this.careService.getSurgeryTypes();
     }
 
+    @Post('surgery-types')
+    async createSurgeryType(@Body() body: any) {
+        return this.careService.createSurgeryType(body);
+    }
+
     @Patch('items/:id')
     async updateItem(@Param('id') id: string, @Body() body: any) {
         return this.careService.updateCareItem(id, body);

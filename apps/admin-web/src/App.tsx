@@ -5,6 +5,7 @@ import { SlotManager } from './components/SlotManager'
 import { VisitGuideManager } from './components/VisitGuideManager'
 import { Dashboard } from './components/Dashboard'
 import { AuditLogViewer } from './components/AuditLogViewer'
+import { SettingsManager } from './components/SettingsManager'
 import { LoginScreen } from './components/LoginScreen'
 import { getActiveSurgeries } from './hooks/useCareManager'
 import clsx from 'clsx'
@@ -25,7 +26,7 @@ const ROOM_DEFS = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS'>('DASHBOARD')
+  const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS' | 'SETTINGS'>('DASHBOARD');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedPatientSurgery, setSelectedPatientSurgery] = useState<any>(null);
@@ -36,7 +37,7 @@ function App() {
 
   // Fetch Active Surgeries & Map to Rooms
   useEffect(() => {
-    if (!isLoggedIn) return; // Stop polling if not logged in
+    if (!isLoggedIn) return;
 
     const fetchWards = async () => {
       try {
@@ -175,6 +176,17 @@ function App() {
                 <span>🛡️</span> 보안 감사 로그
               </button>
             </li>
+
+            {/* New Settings Menu */}
+            <li>
+              <button
+                onClick={() => setActiveMenu('SETTINGS')}
+                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all",
+                  activeMenu === 'SETTINGS' ? "bg-slate-800 text-white shadow-md font-bold" : "text-slate-500 hover:bg-slate-800 hover:text-white")}
+              >
+                <span>⚙️</span> 환경 설정 (Settings)
+              </button>
+            </li>
           </ul>
 
           {/* Waiting List Section (Unassigned) */}
@@ -289,7 +301,8 @@ function App() {
                 activeMenu === 'SLOTS' ? '📅 외래 진료 예약 현황' :
                   activeMenu === 'GUIDE' ? '🧭 외래 경로 관리' :
                     activeMenu === 'LOGS' ? '🛡️ 보안 감사 로그' :
-                      '📋 환자별 케어 플랜 상세'}
+                      activeMenu === 'SETTINGS' ? '⚙️ 병원 환경 설정' :
+                        '📋 환자별 케어 플랜 상세'}
           </h2>
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500 bg-slate-50 py-1 px-3 rounded-full border">
@@ -327,6 +340,12 @@ function App() {
           {activeMenu === 'LOGS' && (
             <div className="max-w-6xl mx-auto">
               <AuditLogViewer />
+            </div>
+          )}
+
+          {activeMenu === 'SETTINGS' && (
+            <div className="max-w-5xl mx-auto">
+              <SettingsManager />
             </div>
           )}
 

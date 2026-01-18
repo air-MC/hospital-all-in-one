@@ -64,4 +64,32 @@ export class HospitalService {
             take: 20
         });
     }
+
+    async createDepartment(name: string) {
+        // Find existing hospital or create one for demo purposes
+        let hospital = await this.prisma.hospital.findFirst();
+        if (!hospital) {
+            hospital = await this.prisma.hospital.create({
+                data: {
+                    name: 'Main Hospital',
+                }
+            });
+        }
+
+        return this.prisma.department.create({
+            data: {
+                name,
+                hospitalId: hospital.id
+            }
+        });
+    }
+
+    async createDoctor(name: string, departmentId: string) {
+        return this.prisma.doctor.create({
+            data: {
+                name,
+                departmentId
+            }
+        });
+    }
 }

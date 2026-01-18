@@ -1,0 +1,24 @@
+import axios from 'axios';
+import { getApiUrl } from '../utils/api';
+
+const API_URL = getApiUrl();
+
+export const getDepartments = async () => {
+    return axios.get(`${API_URL}/hospital/departments`).then(res => res.data);
+}
+
+export const createDepartment = async (name: string) => {
+    return axios.post(`${API_URL}/hospital/departments`, { name });
+}
+
+export const getDoctors = async (departmentId?: string) => {
+    return axios.get(`${API_URL}/hospital/doctors?departmentId=${departmentId || ''}`).then(res => res.data);
+}
+
+export const createDoctor = async (name: string, departmentId: string) => {
+    return axios.post(`${API_URL}/hospital/doctors`, { name, departmentId });
+}
+
+export const createSurgeryType = async (data: any) => {
+    return axios.post(`${API_URL}/care/surgery-types`, data);
+}

@@ -364,7 +364,6 @@ export class CareService {
         // Note: The original instruction's 'submissionData' and 'DateTime.fromISO'
         // seem to be from a client-side or DTO transformation context.
         // For the service layer, converting string to Date object is sufficient
-        // as Prisma handles the DateTime type.
         return this.prisma.surgeryCase.update({
             where: { id },
             data: {
@@ -374,6 +373,19 @@ export class CareService {
                 roomNumber: data.roomNumber,
                 consultNote: data.consultNote,
                 status: data.status
+            }
+        });
+    }
+
+    async createSurgeryType(data: any) {
+        return this.prisma.surgeryType.create({
+            data: {
+                id: data.id, // ID is manually provided (e.g., 'ophthal_cataract')
+                name: data.name,
+                type: data.type,
+                isAdmissionRequired: data.isAdmissionRequired,
+                defaultStayDays: parseInt(data.defaultStayDays),
+                isPreOpExamRequired: data.isPreOpExamRequired
             }
         });
     }
