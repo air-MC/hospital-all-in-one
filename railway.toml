@@ -1,8 +1,8 @@
 # Railway deployment configuration - Final Data Population
 [build]
 builder = "NIXPACKS"
-buildCommand = "cd backend && npm install && npx prisma generate && npm run build && npx ts-node prisma/seed_production.ts"
+buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "cd backend && node $(find dist -name main.js | head -n 1)"
+startCommand = "cd backend && npx ts-node prisma/seed_production.ts && node $(find dist -name main.js | head -n 1)"
 healthCheckPath = "/"
