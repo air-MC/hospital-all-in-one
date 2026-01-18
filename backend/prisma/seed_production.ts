@@ -9,9 +9,7 @@ async function main() {
         hospital = await prisma.hospital.create({
             data: {
                 id: 'hosp_test_01',
-                name: '테스트 병원',
-                address: '서울시',
-                phone: '02-1234-5678'
+                name: '테스트 병원'
             }
         });
     }
