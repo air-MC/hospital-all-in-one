@@ -132,6 +132,15 @@ function App() {
             </li>
             <li>
               <button
+                onClick={() => setActiveMenu('CARE')}
+                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all",
+                  activeMenu === 'CARE' ? "bg-rose-600 text-white shadow-md font-bold" : "text-slate-400 hover:bg-slate-800 hover:text-white")}
+              >
+                <span>📋</span> 통합 케어 플랜 현황
+              </button>
+            </li>
+            <li>
+              <button
                 onClick={() => setActiveMenu('SLOTS')}
                 className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all",
                   activeMenu === 'SLOTS' ? "bg-blue-600 text-white shadow-md font-bold" : "text-slate-400 hover:bg-slate-800 hover:text-white")}

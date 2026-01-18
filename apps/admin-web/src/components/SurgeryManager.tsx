@@ -13,7 +13,7 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
 
     // Form State
     const [selectedTypeId, setSelectedTypeId] = useState<string>('');
-    const [surgeryDateTime, setSurgeryDateTime] = useState(DateTime.now().plus({ days: 7 }).set({ hour: 9, minute: 0 }).toISO() || '');
+    const [surgeryDateTime, setSurgeryDateTime] = useState(DateTime.now().plus({ days: 7 }).set({ hour: 9, minute: 0 }).toFormat("yyyy-MM-dd'T'HH:mm"));
 
     // Patient Search State
     const [patientSearch, setPatientSearch] = useState('');
@@ -82,19 +82,33 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        console.log("[SurgeryManager] Submitting Form Data:", formData);
         try {
             if (!formData.patientId) throw new Error('환자를 선택해주세요.');
-            if (!selectedTypeId) throw new Error('수술/시술 종류를 선택해주세요.');
-            await registerSurgery(formData);
+            if (!formData.surgeryTypeId) throw new Error('수술/시술 종류를 선택해주세요.');
+            if (!formData.surgeryDate) throw new Error('수술 예정 일시를 입력해주세요.');
+
+            const response = await registerSurgery(formData);
+            console.log("[SurgeryManager] Registration Success:", response);
 
             alert('✅ 수술 및 입원 예약이 완료되었습니다.\n[통합 케어 현황] 메뉴에서 케어 플랜을 관리할 수 있습니다.');
             setSelectedTypeId('');
             setSelectedPatient(null);
             setPatientSearch('');
-            setFormData(prev => ({ ...prev, patientId: '', surgeryTypeId: '' }));
-        } catch (error) {
-            const err = error as any;
-            alert(`❌ 등록 실패: ${err.response?.data?.message || err.message}`);
+            setFormData({
+                patientId: '',
+                doctorId: 'doc_test_01',
+                surgeryTypeId: '',
+                surgeryDate: '',
+                admissionDate: '',
+                dischargeDate: '',
+                diagnosis: ''
+            });
+        } catch (error: any) {
+            console.error("[SurgeryManager] Registration Error:", error);
+            const serverMsg = error.response?.data?.message;
+            const detailedMsg = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+            alert(`❌ 등록 실패: ${detailedMsg || error.message}`);
         } finally {
             setLoading(false);
         }
