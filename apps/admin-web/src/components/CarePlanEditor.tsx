@@ -338,8 +338,16 @@ export const CarePlanEditor = ({ surgery, onClose }: { surgery: any, onClose?: (
         if (!room) return;
         try {
             await assignWard(localSurgery.id, room);
-            setLocalSurgery((prev: any) => ({ ...prev, roomNumber: room }));
-            alert('✅ 병실이 배정되었습니다.');
+            // After assigning ward, transition status to ADMITTED for inpatient flow
+            await updateSurgeryStatus(localSurgery.id, 'ADMITTED');
+
+            setLocalSurgery((prev: any) => ({
+                ...prev,
+                roomNumber: room,
+                status: 'ADMITTED'
+            }));
+
+            alert('✅ 병실이 배정되었습니다 (상태: 입원완료)');
         } catch (e) {
             alert('병실 배정 실패');
         }

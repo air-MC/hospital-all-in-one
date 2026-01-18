@@ -11,8 +11,14 @@ import { DateTime } from 'luxon'
 
 // Room Definitions (Static Structure)
 const ROOM_DEFS = [
-  { room: '101호', type: '1인실', capacity: 1 },
-  { room: '102호', type: '2인실', capacity: 2 },
+  { room: '501호', type: '1인실', capacity: 1 },
+  { room: '502호', type: '2인실', capacity: 2 },
+  { room: '503호', type: '4인실', capacity: 4 },
+  { room: '504호', type: '4인실', capacity: 4 },
+  { room: '505호', type: '4인실', capacity: 4 },
+  { room: '301호', type: '수술대기실', capacity: 4 },
+  { room: '302호', type: '회복실', capacity: 4 },
+  { room: '303호', type: '수술실', capacity: 1 },
   { room: 'ICU', type: '중환자실', capacity: 2 }
 ];
 
@@ -41,12 +47,24 @@ function App() {
         setUnassignedList(unassigned);
 
         // 2. Map surgeries to rooms
-        const newWardData = ROOM_DEFS.map(def => {
+        const definedRooms = ROOM_DEFS.map(def => def.room);
+
+        // Find assigned surgeries that are in rooms NOT defined in ROOM_DEFS
+        const dynamicRooms = assigned.reduce((acc: any[], s: any) => {
+          if (!definedRooms.includes(s.roomNumber) && !acc.some(r => r.room === s.roomNumber)) {
+            acc.push({ room: s.roomNumber, type: '기타/임시', capacity: 10 }); // High capacity for temp/dynamic rooms
+          }
+          return acc;
+        }, []);
+
+        const mergedRooms = [...ROOM_DEFS, ...dynamicRooms];
+
+        const newWardData = mergedRooms.map(def => {
           // Find surgeries assigned to this room
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const occupants = assigned.filter((s: any) => s.roomNumber === def.room);
 
-          const beds = Array.from({ length: def.capacity }).map((_, i) => {
+          const beds = Array.from({ length: Math.max(def.capacity, occupants.length) }).map((_, i) => {
             const occupant = occupants[i];
             return occupant ? {
               id: occupant.id,
