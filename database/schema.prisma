@@ -1,0 +1,265 @@
+// This schema reflects the "Constitution" of the Hospital App
+// Database: PostgreSQL
+// Framework: NestJS + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------
+// 1. Hospital & Organization Structure
+// --------------------------------------
+
+model Hospital {
+  id          String       @id @default(uuid())
+  name        String
+  departments Department[]
+  staff       Staff[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Department {
+  id            String         @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital       @relation(fields: [hospitalId], references: [id])
+  name          String         // e.g., "Orthopedics", "Internal Medicine"
+  doctors       Doctor[]
+  scheduleRules ScheduleRule[] // Defining operating hours
+  slots         Slot[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Doctor {
+  id           String         @id @default(uuid())
+  departmentId String
+  department   Department     @relation(fields: [departmentId], references: [id])
+  name         String
+  appointments Appointment[]
+  surgeryCases SurgeryCase[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Staff {
+  id          String   @id @default(uuid())
+  hospitalId  String
+  hospital    Hospital @relation(fields: [hospitalId], references: [id])
+  username    String   @unique
+  password    String   // Hashed
+  role        Role     @default(ADMIN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  NURSE
+  DOCTOR
+}
+
+// --------------------------------------
+// 2. Scheduling & Slots ( The Heart )
+// --------------------------------------
+
+model ScheduleRule {
+  id           String      @id @default(uuid())
+  departmentId String
+  department   Department  @relation(fields: [departmentId], references: [id])
+  dayOfWeek    Int         // 0=Sun, 1=Mon...
+  startTime    String      // "09:00"
+  endTime      String      // "18:00"
+  breakStart   String?     // "12:00"
+  breakEnd     String?     // "13:00"
+  isHoliday    Boolean     @default(false)
+  
+  // Slot generation config
+  slotDuration Int         @default(10) // minutes
+  capacityPerSlot Int      @default(3)  // Max patients per slot
+}
+
+model Slot {
+  id           String        @id @default(uuid())
+  departmentId String
+  department   Department    @relation(fields: [departmentId], references: [id])
+  
+  startDateTime DateTime     // Specific UTC+9 Timestamp
+  endDateTime   DateTime
+  
+  capacity      Int          @default(3)
+  bookedCount   Int          @default(0)
+  status        SlotStatus   @default(OPEN)
+  
+  appointments  Appointment[]
+  
+  // Transaction consistency versioning (Optimistic Locking)
+  version       Int          @default(0) 
+
+  @@index([departmentId, startDateTime])
+}
+
+enum SlotStatus {
+  OPEN
+  FULL
+  BLOCKED // Doctor unavailable/Meeting
+  PAST
+}
+
+// --------------------------------------
+// 3. Patient & Appointments
+// --------------------------------------
+
+model Patient {
+  id           String        @id @default(uuid())
+  name         String
+  phone        String        @unique // Identifier for login
+  birthDate    DateTime
+  gender       String
+  
+  appointments Appointment[]
+  surgeryCases SurgeryCase[]
+  carePlans    CarePlan[]
+  notifications Notification[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Appointment {
+  id           String            @id @default(uuid())
+  slotId       String
+  slot         Slot              @relation(fields: [slotId], references: [id])
+  patientId    String
+  patient      Patient           @relation(fields: [patientId], references: [id])
+  doctorId     String?           // Optional: Outerpatient usually assigned to Dept, but specific doctor tracking v2
+  doctor       Doctor?           @relation(fields: [doctorId], references: [id])
+  
+  status       AppointmentStatus @default(BOOKED)
+  type         AppointmentType   @default(OUTPATIENT_FIRST) // First visit or Follow-up (Post-OP)
+  
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NOSHOW
+}
+
+enum AppointmentType {
+  OUTPATIENT_FIRST
+  OUTPATIENT_REVISIT
+  POST_OP_CHECKUP // Connected to Surgery Discharge
+}
+
+// --------------------------------------
+// 4. Surgery & Care ( The Core Value )
+// --------------------------------------
+
+model SurgeryCase {
+  id            String        @id @default(uuid())
+  patientId     String
+  patient       Patient       @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor        @relation(fields: [doctorId], references: [id])
+  
+  status        SurgeryStatus
+  consultNote   String?       @db.Text
+  
+  surgeryDate   DateTime?     // Confirmed Date
+  admissionDate DateTime?
+  dischargeDate DateTime?
+  
+  carePlan      CarePlan?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum SurgeryStatus {
+  CONSULTATION  // Counselling phase
+  PENDING_EXAMS // Needs more tests
+  SCHEDULED     // Date fixed
+  ADMITTED      // In hospital
+  COMPLETED     // Surgery done
+  DISCHARGED    // Gone home
+  CANCELLED
+}
+
+model CarePlan {
+  id            String         @id @default(uuid())
+  surgeryCaseId String         @unique
+  surgeryCase   SurgeryCase    @relation(fields: [surgeryCaseId], references: [id])
+  
+  patientId     String
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  
+  items         CarePlanItem[]
+  
+  startDate     DateTime       // Usually Admission Date
+  endDate       DateTime       // Usually Discharge Date + n days
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model CarePlanItem {
+  id          String       @id @default(uuid())
+  carePlanId  String
+  carePlan    CarePlan     @relation(fields: [carePlanId], references: [id])
+  
+  category    CareCategory // MEAL, MEDICATION, EXAM, TREATMENT
+  title       String
+  description String?
+  
+  scheduledAt DateTime     // When should this happen?
+  isCompleted Boolean      @default(false)
+  completedAt DateTime?
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum CareCategory {
+  NOTICE      // "Do not eat"
+  MEAL        // "Soft diet"
+  MEDICATION  // "Antibiotics"
+  EXAM        // "MRI"
+  TREATMENT   // "Physical Therapy"
+  INJECTION   // "IV Fluid"
+}
+
+// --------------------------------------
+// 5. Notifications
+// --------------------------------------
+
+model Notification {
+  id        String    @id @default(uuid())
+  patientId String
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  
+  type      NotiType
+  title     String
+  message   String
+  isRead    Boolean   @default(false)
+  sentAt    DateTime  @default(now())
+  
+  triggerId String?   // ID of related entity (AppointmentID, CarePlanItemID)
+}
+
+enum NotiType {
+  BOOKING_CONFIRMED
+  SURGERY_SCHEDULED
+  MEDICATION_REMINDER
+  EXAM_UPCOMING
+  POST_OP_BOOKING_NEEDED
+}

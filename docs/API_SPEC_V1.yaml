@@ -1,0 +1,97 @@
+openapi: 3.0.0
+info:
+  title: Hospital App API
+  version: 1.0.0
+  description: API Specification for Hospital Reservation & Care System
+servers:
+  - url: http://localhost:3000
+    description: Local Development Server
+
+paths:
+  /auth/login:
+    post:
+      summary: Login or Register via Phone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  example: "010-1234-5678"
+      responses:
+        '200':
+          description: JWT Token Returned
+
+  /slots:
+    get:
+      summary: Get Available Slots for a Date
+      parameters:
+        - name: departmentId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2026-01-20"
+      responses:
+        '200':
+          description: List of slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+
+  /appointments:
+    post:
+      summary: Create Appointment (Atomic Transaction)
+      description: Requires Idempotency-Key header to prevent double booking.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slotId:
+                  type: string
+                patientId:
+                  type: string
+      responses:
+        '201':
+          description: Booking Successful
+        '409':
+          description: Conflict - Slot Full or Double Booking
+
+components:
+  schemas:
+    Slot:
+      type: object
+      properties:
+        id:
+          type: string
+        time:
+          type: string
+          example: "09:30"
+        status:
+          type: string
+          enum: [OPEN, FULL, BLOCKED]
+        bookedCount:
+          type: integer
+        capacity:
+          type: integer
+          default: 3

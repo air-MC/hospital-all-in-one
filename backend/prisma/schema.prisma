@@ -1,0 +1,348 @@
+// This schema reflects the "Constitution" of the Hospital App
+// Updated for "Perfect App" Requirements: Audit Logs & Idempotency
+// Database: PostgreSQL
+// Framework: NestJS + Prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------
+// 1. Hospital & Organization Structure
+// --------------------------------------
+
+model Hospital {
+  id          String       @id @default(uuid())
+  name        String
+  departments Department[]
+  staff       Staff[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Department {
+  id            String         @id @default(uuid())
+  hospitalId    String
+  hospital      Hospital       @relation(fields: [hospitalId], references: [id])
+  name          String
+  doctors       Doctor[]
+  scheduleRules ScheduleRule[]
+  slots         Slot[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Doctor {
+  id           String         @id @default(uuid())
+  departmentId String
+  department   Department     @relation(fields: [departmentId], references: [id])
+  name         String
+  appointments Appointment[]
+  surgeryCases SurgeryCase[]
+  slots        Slot[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Staff {
+  id          String   @id @default(uuid())
+  hospitalId  String
+  hospital    Hospital @relation(fields: [hospitalId], references: [id])
+  username    String   @unique
+  password    String   
+  role        Role     @default(ADMIN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  auditLogs   AuditLog[] // Track staff actions
+}
+
+enum Role {
+  ADMIN
+  NURSE
+  DOCTOR
+}
+
+// --------------------------------------
+// 2. Scheduling & Slots (The Heart)
+// --------------------------------------
+
+model ScheduleRule {
+  id           String      @id @default(uuid())
+  departmentId String
+  department   Department  @relation(fields: [departmentId], references: [id])
+  dayOfWeek    Int         
+  startTime    String      
+  endTime      String      
+  breakStart   String?     
+  breakEnd     String?     
+  isHoliday    Boolean     @default(false)
+  slotDuration Int         @default(10)
+  capacityPerSlot Int      @default(3)
+}
+
+model Slot {
+  id           String        @id @default(uuid())
+  departmentId String
+  department   Department    @relation(fields: [departmentId], references: [id])
+  
+  doctorId     String?
+  doctor       Doctor?       @relation(fields: [doctorId], references: [id])
+  
+  startDateTime DateTime     
+  endDateTime   DateTime
+  
+  capacity      Int          @default(3)
+  bookedCount   Int          @default(0)
+  status        SlotStatus   @default(OPEN)
+  
+  appointments  Appointment[]
+  
+  // Optimistic Concurrency Control
+  version       Int          @default(0) 
+
+  @@index([departmentId, doctorId, startDateTime])
+}
+
+enum SlotStatus {
+  OPEN
+  FULL
+  BLOCKED
+  PAST
+}
+
+// --------------------------------------
+// 3. Patient & Appointments
+// --------------------------------------
+
+model Patient {
+  id           String        @id @default(uuid())
+  name         String
+  phone        String        @unique 
+  birthDate    DateTime
+  gender       String
+  
+  appointments Appointment[]
+  surgeryCases SurgeryCase[]
+  carePlans    CarePlan[]
+  notifications Notification[]
+  visitSteps   VisitStep[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Appointment {
+  id           String            @id @default(uuid())
+  slotId       String
+  slot         Slot              @relation(fields: [slotId], references: [id])
+  patientId    String
+  patient      Patient           @relation(fields: [patientId], references: [id])
+  doctorsId    String?           
+  doctor       Doctor?           @relation(fields: [doctorsId], references: [id])
+  
+  status       AppointmentStatus @default(BOOKED)
+  type         AppointmentType   @default(OUTPATIENT_FIRST)
+  
+  idempotencyKey String?       @unique
+
+  visitSteps   VisitStep[]
+
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model VisitStep {
+  id            String      @id @default(uuid())
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  
+  name          String      // e.g., "X-Ray", "Injection", "Consultation"
+  location      String      // e.g., "2F Radiology", "1F Injection Room"
+  status        StepStatus  @default(PENDING)
+  order         Int         @default(0)
+  category      CareCategory? // Optional categorization for icons
+  
+  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+
+  @@index([patientId, appointmentId])
+}
+
+enum StepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NOSHOW
+}
+
+enum AppointmentType {
+  OUTPATIENT_FIRST
+  OUTPATIENT_REVISIT
+  POST_OP_CHECKUP 
+}
+
+// --------------------------------------
+// 4. Surgery & Care
+// --------------------------------------
+
+model SurgeryType {
+  id                  String   @id @default(uuid())
+  name                String
+  type                SurgeryCategory // SURGERY or PROCEDURE
+  
+  isAdmissionRequired Boolean  @default(true)
+  defaultStayDays     Int      @default(1)
+  isPreOpExamRequired Boolean  @default(true)
+  
+  surgeryCases        SurgeryCase[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+enum SurgeryCategory {
+  SURGERY
+  PROCEDURE
+}
+
+model SurgeryCase {
+  id            String        @id @default(uuid())
+  patientId     String
+  patient       Patient       @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor        @relation(fields: [doctorId], references: [id])
+  
+  surgeryTypeId String
+  surgeryType   SurgeryType   @relation(fields: [surgeryTypeId], references: [id])
+
+  status        SurgeryStatus @default(CONFIRMED)
+  consultNote   String?       @db.Text
+  
+  surgeryDate   DateTime     
+  admissionDate DateTime?
+  dischargeDate DateTime?
+  
+  roomNumber    String?      // Ward/Room assignment
+
+  carePlan      CarePlan?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum SurgeryStatus {
+  CONFIRMED
+  ADMITTED
+  IN_SURGERY
+  POST_OP
+  DISCHARGED
+  CANCELLED
+}
+
+model CarePlan {
+  id            String         @id @default(uuid())
+  surgeryCaseId String         @unique
+  surgeryCase   SurgeryCase    @relation(fields: [surgeryCaseId], references: [id])
+  patientId     String
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  
+  items         CarePlanItem[]
+  startDate     DateTime       
+  endDate       DateTime       
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model CarePlanItem {
+  id          String       @id @default(uuid())
+  carePlanId  String
+  carePlan    CarePlan     @relation(fields: [carePlanId], references: [id])
+  
+  category    CareCategory 
+  title       String
+  description String?
+  
+  scheduledAt DateTime     
+  isCompleted Boolean      @default(false)
+  completedAt DateTime?
+
+  priority    CareItemPriority @default(NORMAL)
+  
+  metadata    Json?            // Stores structured info (drugName, dosage, criteria, etc.)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum CareItemPriority {
+  CRITICAL
+  NORMAL
+  INFO
+}
+
+enum CareCategory {
+  NOTICE      
+  MEAL        
+  MEDICATION  
+  EXAM        
+  TREATMENT   
+  INJECTION   
+}
+
+// --------------------------------------
+// 5. System Utilities (Audit & Notifications)
+// --------------------------------------
+
+model Notification {
+  id        String    @id @default(uuid())
+  patientId String
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  
+  type      NotiType
+  title     String
+  message   String
+  isRead    Boolean   @default(false)
+  sentAt    DateTime  @default(now())
+  triggerId String?   
+}
+
+enum NotiType {
+  BOOKING_CONFIRMED
+  SURGERY_SCHEDULED
+  MEDICATION_REMINDER
+  EXAM_UPCOMING
+  POST_OP_BOOKING_NEEDED
+}
+
+// Perfect App Requirement: Audit Logging (Who changed what)
+model AuditLog {
+  id          String   @id @default(uuid())
+  entityTable String   // "Appointment", "Slot", "SurgeryCase"
+  entityId    String   // The ID of the record changed
+  action      String   // "CREATE", "UPDATE", "DELETE", "STATUS_CHANGE"
+  
+  actorId     String?  // Staff ID or System
+  actor       Staff?   @relation(fields: [actorId], references: [id])
+  
+  oldValue    String?  @db.Text // JSON string
+  newValue    String?  @db.Text // JSON string
+  
+  createdAt   DateTime @default(now())
+}
