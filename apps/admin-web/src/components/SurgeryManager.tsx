@@ -211,11 +211,17 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                                     className="w-full bg-white border border-slate-200 rounded-lg p-3 shadow-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-lg font-medium"
                                 >
                                     <option value="">-- 선택해주세요 --</option>
-                                    {surgeryTypes?.map((t: any) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.type === 'SURGERY' ? '🩺 수술' : '💊 시술'} - {t.name} (입원: {t.defaultStayDays}일)
-                                        </option>
-                                    ))}
+                                    {!surgeryTypes ? (
+                                        <option disabled>로딩 중...</option>
+                                    ) : surgeryTypes.length === 0 ? (
+                                        <option disabled>등록된 수술 종류가 없습니다.</option>
+                                    ) : (
+                                        surgeryTypes.map((t: any) => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.type === 'SURGERY' ? '🩺 수술' : '💊 시술'} - {t.name} (입원: {t.defaultStayDays}일)
+                                            </option>
+                                        ))
+                                    )}
                                 </select>
                             </div>
                         </div>
