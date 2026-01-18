@@ -82,13 +82,21 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        console.log("[SurgeryManager] Submitting Form Data:", formData);
         try {
+            console.log("[SurgeryManager] Submitting Form Data (Raw):", formData);
             if (!formData.patientId) throw new Error('환자를 선택해주세요.');
             if (!formData.surgeryTypeId) throw new Error('수술/시술 종류를 선택해주세요.');
             if (!formData.surgeryDate) throw new Error('수술 예정 일시를 입력해주세요.');
 
-            const response = await registerSurgery(formData);
+            // Ensure toISO() format for backend reliability
+            const submissionData = {
+                ...formData,
+                surgeryDate: DateTime.fromISO(formData.surgeryDate).toISO() || formData.surgeryDate,
+                admissionDate: formData.admissionDate ? (DateTime.fromISO(formData.admissionDate).toISO() || '') : '',
+                dischargeDate: formData.dischargeDate ? (DateTime.fromISO(formData.dischargeDate).toISO() || '') : ''
+            };
+
+            const response = await registerSurgery(submissionData);
             console.log("[SurgeryManager] Registration Success:", response);
 
             alert('✅ 수술 및 입원 예약이 완료되었습니다.\n[통합 케어 현황] 메뉴에서 케어 플랜을 관리할 수 있습니다.');

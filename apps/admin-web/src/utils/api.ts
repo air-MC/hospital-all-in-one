@@ -15,18 +15,18 @@ export const getApiUrl = () => {
         const hostname = window.location.hostname;
         const protocol = window.location.protocol;
 
-        // If we want to use the local IP logic
-        if (hostname !== 'localhost' &&
-            hostname !== '127.0.0.1' &&
-            !hostname.includes('vercel.app') &&
-            !hostname.includes('railway.app') &&
-            !hostname.includes('github.io')) {
-            return `${protocol}//${hostname}:3000`;
+        console.log(`[API_URL_DETECTION] hostname: ${hostname}, protocol: ${protocol}`);
+
+        // If accessing via Vercel or similar, use the known Railway production backend
+        if (hostname.includes('vercel.app') || hostname.includes('github.io')) {
+            return 'https://hospital-all-in-one-production.up.railway.app';
         }
 
-        // 3. If accessing via Vercel, use the known Railway production backend
-        if (hostname.includes('vercel.app')) {
-            return 'https://hospital-all-in-one-production.up.railway.app';
+        // If we want to use the local IP logic (testing from tablet/mobile in same WIFI)
+        if (hostname !== 'localhost' &&
+            hostname !== '127.0.0.1' &&
+            !hostname.includes('railway.app')) {
+            return `${protocol}//${hostname}:3000`;
         }
     }
 
