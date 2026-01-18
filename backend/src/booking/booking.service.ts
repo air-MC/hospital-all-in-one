@@ -237,6 +237,7 @@ export class BookingService {
     async getStats() {
         const todayStart = startOfDay(new Date());
         const todayEnd = endOfDay(new Date());
+        console.log(`[BookingService] getStats called. Range: ${todayStart.toISOString()} - ${todayEnd.toISOString()}`);
 
         const [totalAppts, checkedInAppts, activeSurgeries, recentLogs] = await Promise.all([
             this.prisma.appointment.count({
@@ -253,6 +254,8 @@ export class BookingService {
                 orderBy: { createdAt: 'desc' }
             })
         ]);
+
+        console.log(`[BookingService] getStats result - Total: ${totalAppts}, CheckedIn: ${checkedInAppts}, ActiveSurgeries: ${activeSurgeries}`);
 
         return {
             today: {
