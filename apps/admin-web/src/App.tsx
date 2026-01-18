@@ -5,6 +5,7 @@ import { SlotManager } from './components/SlotManager'
 import { VisitGuideManager } from './components/VisitGuideManager'
 import { Dashboard } from './components/Dashboard'
 import { AuditLogViewer } from './components/AuditLogViewer'
+import { LoginScreen } from './components/LoginScreen'
 import { getActiveSurgeries } from './hooks/useCareManager'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
@@ -23,6 +24,7 @@ const ROOM_DEFS = [
 ];
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS'>('DASHBOARD')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,6 +36,8 @@ function App() {
 
   // Fetch Active Surgeries & Map to Rooms
   useEffect(() => {
+    if (!isLoggedIn) return; // Stop polling if not logged in
+
     const fetchWards = async () => {
       try {
         const surgeries = await getActiveSurgeries();
@@ -85,7 +89,7 @@ function App() {
     fetchWards();
     const interval = setInterval(fetchWards, 5000); // Poll every 5s
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoggedIn]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePatientClick = (surgery: any) => {
@@ -94,6 +98,10 @@ function App() {
       setActiveMenu('CARE');
     }
   };
+
+  if (!isLoggedIn) {
+    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+  }
 
   return (
     <div className="flex h-screen w-full bg-slate-100 font-sans overflow-hidden">
