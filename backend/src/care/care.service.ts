@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSurgeryDto } from './dto/create-surgery.dto';
 import { CareCategory, SurgeryStatus } from '@prisma/client';
@@ -12,78 +12,95 @@ export class CareService {
      * Registers a new Surgery Case and auto-generates a Care Plan.
      */
     async registerSurgery(dto: CreateSurgeryDto) {
-        // 1. Validate Patient/Doctor
-        const patient = await this.prisma.patient.findUnique({ where: { id: dto.patientId } });
-        if (!patient) throw new NotFoundException('Patient not found');
+        console.log("[CareService] registerSurgery START", dto);
+        try {
+            // 1. Validate Patient/Doctor
+            const patient = await this.prisma.patient.findUnique({ where: { id: dto.patientId } });
+            if (!patient) {
+                console.error("[CareService] Patient not found ID:", dto.patientId);
+                throw new NotFoundException('Patient not found');
+            }
 
-        // 2. Resolve Surgery Type (NEW)
-        const surgeryType = await (this.prisma as any).surgeryType.findUnique({ where: { id: dto.surgeryTypeId } });
-        if (!surgeryType) throw new NotFoundException('Surgery Type not found');
+            // 2. Resolve Surgery Type
+            const surgeryType = await this.prisma.surgeryType.findUnique({ where: { id: dto.surgeryTypeId } });
+            if (!surgeryType) {
+                console.error("[CareService] Surgery Type not found ID:", dto.surgeryTypeId);
+                throw new NotFoundException('Surgery Type not found');
+            }
 
-        // Auto-calculate dates based on SurgeryType if not provided
-        const sDate = new Date(dto.surgeryDate);
-        // Admission: If required, default to D-1 or usage of defaultStay? Let's assume D-1 for prep if isAdmissionRequired
-        // But user requirement says: "Auto-calc default stay/discharge".
-        // Let's stick to the DTO dates if provided, otherwise fallback? 
-        // Actually the flow is "Admin selects Type -> System Auto-calcs -> Admin Confirms". 
-        // So we can assume the DTO received IS the confirmed dates. 
-        // We will just validate or use them as is. 
-        // But just in case, let's ensure they exist.
-        const admission = new Date(dto.admissionDate || subDays(sDate, surgeryType.isAdmissionRequired ? 1 : 0));
-        const discharge = new Date(dto.dischargeDate || addDays(sDate, surgeryType.defaultStayDays));
+            // Date Parsing with Safety
+            const sDate = new Date(dto.surgeryDate);
+            if (isNaN(sDate.getTime())) throw new BadRequestException('Invalid surgery date');
 
-        // 3. Create Surgery Case
-        return this.prisma.$transaction(async (tx) => {
-            const surgeryCase = await (tx as any).surgeryCase.create({
-                data: {
-                    patientId: dto.patientId,
-                    doctorId: dto.doctorId,
-                    surgeryTypeId: dto.surgeryTypeId, // Linked
-                    surgeryDate: sDate,
-                    admissionDate: admission,
-                    dischargeDate: discharge,
-                    status: 'CONFIRMED', // Initial status per spec - using string literal to bypass old Enum
-                    consultNote: dto.diagnosis
-                }
+            const admission = (dto.admissionDate && dto.admissionDate !== '')
+                ? new Date(dto.admissionDate)
+                : subDays(sDate, surgeryType.isAdmissionRequired ? 1 : 0);
+
+            const discharge = (dto.dischargeDate && dto.dischargeDate !== '')
+                ? new Date(dto.dischargeDate)
+                : addDays(sDate, surgeryType.defaultStayDays);
+
+            // 3. Create Surgery Case
+            return await this.prisma.$transaction(async (tx) => {
+                console.log("[CareService] Transaction step 1: SurgeryCase");
+                const surgeryCase = await tx.surgeryCase.create({
+                    data: {
+                        patientId: dto.patientId,
+                        doctorId: dto.doctorId,
+                        surgeryTypeId: dto.surgeryTypeId,
+                        surgeryDate: sDate,
+                        admissionDate: admission,
+                        dischargeDate: discharge,
+                        status: 'CONFIRMED',
+                        consultNote: dto.diagnosis
+                    }
+                });
+
+                // 4. Create Care Plan
+                console.log("[CareService] Transaction step 2: CarePlan");
+                const planStart = startOfDay(subDays(sDate, 7));
+                const planEnd = startOfDay(addDays(discharge, 14));
+
+                const carePlan = await tx.carePlan.create({
+                    data: {
+                        surgeryCaseId: surgeryCase.id,
+                        patientId: dto.patientId,
+                        startDate: planStart,
+                        endDate: planEnd
+                    }
+                });
+
+                // 5. Generate Standard Care Items (Template Engine - Dynamic)
+                console.log("[CareService] Transaction step 3: generateStandardCareItems");
+                await this.generateStandardCareItems(tx, carePlan.id, sDate, surgeryType);
+
+                // 6. Create Initial Notification
+                console.log("[CareService] Transaction step 4: notification");
+                const dateStr = `${sDate.getMonth() + 1}월 ${sDate.getDate()}일`;
+                const admStr = surgeryType.isAdmissionRequired ? `(입원: ${admission.getMonth() + 1}/${admission.getDate()})` : '(당일 시술)';
+
+                await tx.notification.create({
+                    data: {
+                        patientId: dto.patientId,
+                        type: 'SURGERY_SCHEDULED',
+                        title: '🎉 수술 예약이 확정되었습니다',
+                        message: `수술일[${dateStr}]이 확정되었습니다. ${admStr} - 상세 일정은 '나의 일정' 탭에서 확인하세요.`,
+                        sentAt: new Date(),
+                        triggerId: surgeryCase.id
+                    }
+                });
+
+                console.log("[CareService] Transaction SUCCESS");
+                // Return Surgery with CarePlan so Frontend can link immediately
+                return tx.surgeryCase.findUnique({
+                    where: { id: surgeryCase.id },
+                    include: { carePlan: true }
+                });
             });
-
-            // 4. Create Care Plan
-            const planStart = startOfDay(subDays(sDate, 7));
-            const planEnd = startOfDay(addDays(discharge, 14));
-
-            const carePlan = await tx.carePlan.create({
-                data: {
-                    surgeryCaseId: surgeryCase.id,
-                    patientId: dto.patientId,
-                    startDate: planStart,
-                    endDate: planEnd
-                }
-            });
-
-            // 5. Generate Standard Care Items (Template Engine - Dynamic)
-            await this.generateStandardCareItems(tx, carePlan.id, sDate, surgeryType);
-
-            // 6. Create Initial Notification
-            const dateStr = `${sDate.getMonth() + 1}월 ${sDate.getDate()}일`;
-            const admStr = surgeryType.isAdmissionRequired ? `(입원: ${admission.getMonth() + 1}/${admission.getDate()})` : '(당일 시술)';
-
-            await tx.notification.create({
-                data: {
-                    patientId: dto.patientId,
-                    type: 'SURGERY_SCHEDULED',
-                    title: '🎉 수술 예약이 확정되었습니다',
-                    message: `수술일[${dateStr}]이 확정되었습니다. ${admStr} - 상세 일정은 '나의 일정' 탭에서 확인하세요.`,
-                    sentAt: new Date(),
-                    triggerId: surgeryCase.id
-                }
-            });
-
-            // Return Surgery with CarePlan so Frontend can link immediately
-            return (tx as any).surgeryCase.findUnique({
-                where: { id: surgeryCase.id },
-                include: { carePlan: true }
-            });
-        });
+        } catch (e) {
+            console.error("[CareService] registerSurgery FAILED error:", e);
+            throw e;
+        }
     }
 
     /**
@@ -505,7 +522,7 @@ export class CareService {
     }
 
     async getSurgeryTypes() {
-        return (this.prisma as any).surgeryType.findMany();
+        return this.prisma.surgeryType.findMany();
     }
 
     async updateCareItem(id: string, data: any) {
