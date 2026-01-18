@@ -354,34 +354,28 @@ export const CarePlanEditor = ({ surgery, onClose }: { surgery: any, onClose?: (
     };
 
     // Grid Dates
-    const parseDate = (d: any) => {
-        if (!d) return null;
-        if (d instanceof Date) return d;
-        return new Date(d);
-    }
 
-    const sDateRaw = parseDate(surgery.surgeryDate);
-    const surgeryDate = sDateRaw && !isNaN(sDateRaw.getTime()) ? sDateRaw : new Date();
-    const aDateRaw = parseDate(surgery.admissionDate);
-    const dDateRaw = parseDate(surgery.dischargeDate);
+    // Grid Date Helpers
+    const safeDate = (dateVal: any): Date => {
+        if (!dateVal) return new Date();
+        const d = dateVal instanceof Date ? dateVal : new Date(dateVal);
+        return isNaN(d.getTime()) ? new Date() : d;
+    };
 
-    const admissionDate = aDateRaw && !isNaN(aDateRaw.getTime())
-        ? aDateRaw
-        : DateTime.fromJSDate(surgeryDate).minus({ days: 1 }).toJSDate();
+    const surgeryDate = safeDate(localSurgery.surgeryDate);
+    const admissionDate = localSurgery.admissionDate ? safeDate(localSurgery.admissionDate) : DateTime.fromJSDate(surgeryDate).minus({ days: 1 }).toJSDate();
+    const dischargeDate = localSurgery.dischargeDate ? safeDate(localSurgery.dischargeDate) : DateTime.fromJSDate(surgeryDate).plus({ days: 3 }).toJSDate();
 
-    const dischargeDate = dDateRaw && !isNaN(dDateRaw.getTime())
-        ? dDateRaw
-        : DateTime.fromJSDate(surgeryDate).plus({ days: 3 }).toJSDate();
-
+    // Generate dates for the grid
     const dates: Date[] = [];
     const startDt = DateTime.fromJSDate(admissionDate).startOf('day');
     const endDt = DateTime.fromJSDate(dischargeDate).endOf('day');
 
     let currDt = startDt;
-    const finalDt = endDt > startDt ? endDt : startDt.plus({ days: 1 });
+    const finalDt = endDt >= startDt ? endDt : startDt.plus({ days: 3 }); // Ensure at least a few days
 
     let safeguard = 0;
-    while (currDt <= finalDt && safeguard < 30) {
+    while (currDt <= finalDt && safeguard < 31) {
         dates.push(currDt.toJSDate());
         currDt = currDt.plus({ days: 1 });
         safeguard++;
@@ -395,11 +389,18 @@ export const CarePlanEditor = ({ surgery, onClose }: { surgery: any, onClose?: (
     ];
 
     const getItemsForCell = (date: Date, slotId: string) => {
-        if (!allItems) return [];
-        const targetDateStr = DateTime.fromJSDate(date).toFormat('yyyy-MM-dd');
+        if (!allItems || !Array.isArray(allItems)) return [];
+        const cellDateStr = DateTime.fromJSDate(date).toFormat('yyyy-MM-dd');
+
         return allItems.filter((item: any) => {
-            const itemDt = DateTime.fromISO(item.scheduledAt);
-            if (itemDt.toFormat('yyyy-MM-dd') !== targetDateStr) return false;
+            if (!item.scheduledAt) return false;
+            // Handle both ISO strings and Date objects
+            const itemDt = typeof item.scheduledAt === 'string'
+                ? DateTime.fromISO(item.scheduledAt)
+                : DateTime.fromJSDate(new Date(item.scheduledAt));
+
+            if (!itemDt.isValid || itemDt.toFormat('yyyy-MM-dd') !== cellDateStr) return false;
+
             const h = itemDt.hour;
             if (slotId === 'MORNING' && (h >= 6 && h < 11)) return true;
             if (slotId === 'LUNCH' && (h >= 11 && h < 16)) return true;
