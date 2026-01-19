@@ -145,6 +145,8 @@ export class BookingService {
             });
             if (existingAppt) return existingAppt;
 
+            console.log(`[BookingService] Booking process started - Slot: ${slotId}, Patient: ${patientId}, Key: ${idempotencyKey}`);
+
             const slot = await tx.slot.findUnique({
                 where: { id: slotId }
             });
@@ -183,15 +185,18 @@ export class BookingService {
                 });
             }
 
+            console.log(`[BookingService] Creating appointment record...`);
             const appointment = await tx.appointment.create({
                 data: {
                     slotId,
                     patientId,
                     status: 'BOOKED',
                     idempotencyKey,
-                    hospitalId: patient.hospitalId // [FIX] Injected
+                    hospitalId: patient.hospitalId,
+                    doctorsId: slot.doctorId // [FIX] Copy doctor from slot
                 }
             });
+            console.log(`[BookingService] Appointment record created: ${appointment.id}`);
 
             await tx.auditLog.create({
                 data: {
@@ -204,25 +209,30 @@ export class BookingService {
             });
 
             // Create admin notification for new appointment
-            const slotDetails = await tx.slot.findUnique({
-                where: { id: slotId },
-                include: { department: true, doctor: true }
-            });
+            try {
+                console.log(`[BookingService] Creating admin notification...`);
+                const slotWithDetails = await tx.slot.findUnique({
+                    where: { id: slotId },
+                    include: { department: true }
+                });
 
-            // Assuming DateTime is imported or available, e.g., from 'luxon'
-            // If not, you'll need to import it or use date-fns for formatting
-            // For now, using a placeholder for DateTime.fromJSDate and toFormat
-            const formattedTime = slotDetails?.startDateTime ? `${slotDetails.startDateTime.getMonth() + 1}/${slotDetails.startDateTime.getDate()} ${slotDetails.startDateTime.getHours()}:${String(slotDetails.startDateTime.getMinutes()).padStart(2, '0')}` : '';
+                const formattedTime = slotWithDetails?.startDateTime ?
+                    `${slotWithDetails.startDateTime.getMonth() + 1}/${slotWithDetails.startDateTime.getDate()} ${slotWithDetails.startDateTime.getHours()}:${String(slotWithDetails.startDateTime.getMinutes()).padStart(2, '0')}` : '';
 
-            await tx.notification.create({
-                data: {
-                    patientId: 'SYSTEM', // System notification for admin
-                    type: 'BOOKING_CONFIRMED',
-                    title: '🔔 신규 외래 예약',
-                    message: `${patient.name} 환자 - ${slotDetails?.department.name} (${formattedTime})`,
-                    triggerId: appointment.id
-                }
-            });
+                await tx.notification.create({
+                    data: {
+                        patientId: 'SYSTEM', // Ensure this ID exists in seed!
+                        type: 'BOOKING_CONFIRMED',
+                        title: '🔔 신규 외래 예약',
+                        message: `${patient.name} 환자 - ${slotWithDetails?.department.name} (${formattedTime})`,
+                        triggerId: appointment.id
+                    }
+                });
+                console.log(`[BookingService] Admin notification created.`);
+            } catch (notiError) {
+                console.error(`[BookingService] ⚠️ Notification creation failed (non-fatal):`, notiError);
+                // We DON'T throw here so the transaction doesn't roll back
+            }
 
             console.log(`[BookingService] ✅ Appointment created: ${appointment.id}, Admin notification sent`);
 
