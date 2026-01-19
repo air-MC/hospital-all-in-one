@@ -370,10 +370,14 @@ export class HospitalService {
     }
 
     async createHospitalAdmin(hospitalId: string, data: { username: string, name: string, password?: string }) {
+        // Generate email from username if not provided
+        const email = `${data.username}@hospital.com`;
+
         return this.prisma.user.create({
             data: {
                 hospitalId,
                 username: data.username,
+                email: email,
                 name: data.name,
                 password: data.password || '1234', // Default password if none provided
                 role: 'ADMIN'
