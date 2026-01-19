@@ -42,13 +42,25 @@ export class BookingService {
         const dayOfWeek = date.getDay();
         console.log(`[BookingService] Generating slots for Dept: ${departmentId}, Date: ${date.toISOString()}, DayOfWeek: ${dayOfWeek}`);
 
-        const rule = await this.prisma.scheduleRule.findFirst({
+        let rule = await this.prisma.scheduleRule.findFirst({
             where: { departmentId, dayOfWeek }
         });
 
         if (!rule) {
-            console.error(`[BookingService] No ScheduleRule found for Dept: ${departmentId}, DayOfWeek: ${dayOfWeek}`);
-            throw new NotFoundException(`해당 요일(${dayOfWeek})의 근무 규칙이 설정되지 않았습니다.`);
+            console.warn(`[BookingService] No ScheduleRule found for Dept: ${departmentId}, DayOfWeek: ${dayOfWeek}. Using DEFAULT rule.`);
+            // Use Default Rule on the fly
+            rule = {
+                id: 'default',
+                departmentId,
+                dayOfWeek,
+                startTime: '09:00',
+                endTime: '18:00',
+                breakStart: '12:00',
+                breakEnd: '13:00',
+                slotDuration: 30,
+                capacityPerSlot: 3,
+                isHoliday: false
+            } as any;
         }
 
         if (rule.isHoliday) {
