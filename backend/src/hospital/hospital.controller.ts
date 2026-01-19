@@ -48,4 +48,9 @@ export class HospitalController {
     async updateHospitalInfo(@Body() body: { id: string, name: string }) {
         return this.hospitalService.updateHospitalInfo(body.id, body.name);
     }
+
+    @Post('info/status')
+    async updateHospitalStatus(@Body() body: { id: string, status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED' }) {
+        return this.hospitalService.updateHospitalStatus(body.id, body.status);
+    }
 }

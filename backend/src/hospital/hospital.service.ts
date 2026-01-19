@@ -118,4 +118,11 @@ export class HospitalService {
             data: { name }
         });
     }
+
+    async updateHospitalStatus(id: string, status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED') {
+        return this.prisma.hospital.update({
+            where: { id },
+            data: { status }
+        });
+    }
 }
