@@ -1,4 +1,4 @@
-# Railway Config - Force Rebuild: 2026-01-19 15:28 (Doctor Schedule Schema Update)
+# Railway Config - Force Rebuild: 2026-01-19 19:59 (Security Update - Block system@hospital.com)
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
