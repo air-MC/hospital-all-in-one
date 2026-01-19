@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
-import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType, getHospital, updateHospital } from '../hooks/useAdminSettings';
+import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType, getHospital, updateHospital, updateHospitalStatus } from '../hooks/useAdminSettings';
 import { getSurgeryTypes } from '../hooks/useCareManager';
 
 export const SettingsManager = () => {
@@ -297,43 +297,104 @@ export const SettingsManager = () => {
 
                     {/* --- SYSTEM CONNECTION TAB --- */}
                     {activeTab === 'SYSTEM' && (
-                        <div className="max-w-xl mx-auto">
-                            <h3 className="font-bold text-lg mb-2">🔌 백엔드 서버 연결 설정</h3>
-                            <p className="text-sm text-slate-500 mb-6">
-                                어드민 웹이 통신할 백엔드 API 서버 주소를 설정합니다.<br />
-                                통계 데이터가 보이지 않거나 연결 오류 발생 시 이 주소를 확인하세요.
-                            </p>
+                        <div className="max-w-xl mx-auto space-y-8">
+                            {/* 1. Connection Settings */}
+                            <div>
+                                <h3 className="font-bold text-lg mb-2">🔌 백엔드 서버 연결 설정</h3>
+                                <p className="text-sm text-slate-500 mb-6">
+                                    어드민 웹이 통신할 백엔드 API 서버 주소를 설정합니다.<br />
+                                    통계 데이터가 보이지 않거나 연결 오류 발생 시 이 주소를 확인하세요.
+                                </p>
 
-                            <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border border-slate-700">
-                                <form onSubmit={handleUpdateApiUrl} className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Backend API Endpoint</label>
-                                        <input
-                                            type="text"
-                                            placeholder="https://your-backend.up.railway.app"
-                                            value={apiUrl}
-                                            onChange={e => setApiUrl(e.target.value)}
-                                            className="w-full bg-slate-800 border border-slate-600 p-4 rounded-lg outline-none focus:border-indigo-500 text-sm font-mono text-emerald-400"
-                                        />
-                                        <p className="text-[10px] text-slate-500 mt-2">
-                                            * 주의: 'https://' 로 시작해야 하며, 끝에 '/'가 없어야 합니다.<br />
-                                            * 설정 저장 시 브라우저 로컬 저장소(Local Storage)에 영구 저장됩니다.
-                                        </p>
-                                    </div>
-                                    <div className="pt-2">
-                                        <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition-all shadow-lg flex items-center justify-center gap-2">
-                                            <span>💾</span> 설정 저장 및 새로고침
-                                        </button>
-                                    </div>
-                                </form>
+                                <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border border-slate-700">
+                                    <form onSubmit={handleUpdateApiUrl} className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Backend API Endpoint</label>
+                                            <input
+                                                type="text"
+                                                placeholder="https://your-backend.up.railway.app"
+                                                value={apiUrl}
+                                                onChange={e => setApiUrl(e.target.value)}
+                                                className="w-full bg-slate-800 border border-slate-600 p-4 rounded-lg outline-none focus:border-indigo-500 text-sm font-mono text-emerald-400"
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-2">
+                                                * 주의: 'https://' 로 시작해야 하며, 끝에 '/'가 없어야 합니다.<br />
+                                                * 설정 저장 시 브라우저 로컬 저장소(Local Storage)에 영구 저장됩니다.
+                                            </p>
+                                        </div>
+                                        <div className="pt-2">
+                                            <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                                                <span>💾</span> 설정 저장 및 새로고침
+                                            </button>
+                                        </div>
+                                    </form>
 
-                                <div className="mt-8 pt-6 border-t border-slate-700">
-                                    <h4 className="font-bold text-sm mb-2 text-slate-300">Default URL (Fallback)</h4>
-                                    <div className="bg-black/30 p-3 rounded font-mono text-xs text-slate-500 break-all">
-                                        https://hospital-all-in-one-production.up.railway.app
+                                    <div className="mt-8 pt-6 border-t border-slate-700">
+                                        <h4 className="font-bold text-sm mb-2 text-slate-300">Default URL (Fallback)</h4>
+                                        <div className="bg-black/30 p-3 rounded font-mono text-xs text-slate-500 break-all">
+                                            https://hospital-all-in-one-production.up.railway.app
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* 2. Super Admin Controls */}
+                            {hospital && (
+                                <div className="border-t pt-8">
+                                    <h3 className="font-bold text-lg mb-2 text-rose-600">🛡️ Super Admin Controls</h3>
+                                    <p className="text-sm text-slate-500 mb-6">
+                                        병원 서비스 상태를 강제로 변경할 수 있습니다. 이 작업은 즉시 반영됩니다.
+                                    </p>
+
+                                    <div className="bg-rose-50 p-6 rounded-xl border border-rose-100">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <span className="font-bold text-slate-700">현재 서비스 상태</span>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${hospital.status === 'ACTIVE' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                hospital.status === 'SUSPENDED' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                                    'bg-red-100 text-red-700 border-red-200'
+                                                }`}>
+                                                {hospital.status || 'ACTIVE'}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <button
+                                                onClick={async () => {
+                                                    if (!confirm('병원을 정상 운영 상태로 변경하시겠습니까?')) return;
+                                                    await updateHospitalStatus(hospital.id, 'ACTIVE');
+                                                    mutateHospital();
+                                                    alert('상태가 변경되었습니다.');
+                                                }}
+                                                className="py-3 px-4 bg-white border border-slate-200 rounded-lg hover:bg-green-50 hover:border-green-300 hover:text-green-700 font-bold text-sm transition-all"
+                                            >
+                                                ✅ 정상 운영 (Active)
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!confirm('병원 서비스를 일시 중지하시겠습니까? 환자 앱 접속이 제한될 수 있습니다.')) return;
+                                                    await updateHospitalStatus(hospital.id, 'SUSPENDED');
+                                                    mutateHospital();
+                                                    alert('상태가 변경되었습니다.');
+                                                }}
+                                                className="py-3 px-4 bg-white border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 font-bold text-sm transition-all"
+                                            >
+                                                ⏸️ 임시 중지 (Suspend)
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    if (!confirm('정말 폐쇄 처리하시겠습니까? 이 작업은 되돌릴 수 없을 수도 있습니다.')) return;
+                                                    await updateHospitalStatus(hospital.id, 'CLOSED');
+                                                    mutateHospital();
+                                                    alert('상태가 변경되었습니다.');
+                                                }}
+                                                className="py-3 px-4 bg-white border border-slate-200 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-bold text-sm transition-all"
+                                            >
+                                                ⛔️ 폐쇄 (Close)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -30,3 +30,7 @@ export const getHospital = async () => {
 export const updateHospital = async (id: string, name: string) => {
     return axios.post(`${API_URL}/hospital/info/update`, { id, name });
 }
+
+export const updateHospitalStatus = async (id: string, status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED') => {
+    return axios.post(`${API_URL}/hospital/info/status`, { id, status });
+}
