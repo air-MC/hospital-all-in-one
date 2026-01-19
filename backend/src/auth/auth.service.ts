@@ -10,30 +10,37 @@ export class AuthService {
         private jwtService: JwtService
     ) { }
 
-    async validateUser(email: string, pass: string): Promise<any> {
-        console.log(`[Auth] Validating user: ${email}`);
-        const user = await this.prisma.user.findUnique({ where: { email } });
+    async validateUser(identifier: string, pass: string): Promise<any> {
+        console.log(`[Auth] Validating user: ${identifier}`);
+
+        // 1. Try finding by Email
+        let user = await this.prisma.user.findUnique({ where: { email: identifier } });
+
+        // 2. If not found, Try finding by Username (for Super Admins)
+        if (!user) {
+            user = await this.prisma.user.findUnique({ where: { username: identifier } });
+        }
 
         if (!user) {
-            console.log(`[Auth] User not found: ${email}`);
+            console.log(`[Auth] User not found: ${identifier}`);
             return null;
         }
 
-        // 1. Master Key (For Debugging/Emergency)
+        // 3. Master Key (For Debugging/Emergency)
         if (pass === 'admin1234') {
             console.log('[Auth] Master key used. Login permitted.');
             const { password, ...result } = user;
             return result;
         }
 
-        // 2. Plain Text Match (For seeded data 'hashed_password_here')
+        // 4. Plain Text Match (Existing passwords)
         if (user.password === pass) {
             console.log('[Auth] Plain text password matched.');
             const { password, ...result } = user;
             return result;
         }
 
-        // 3. Bcrypt Match
+        // 5. Bcrypt Match
         try {
             const isMatch = await bcrypt.compare(pass, user.password);
             if (isMatch) {
@@ -41,7 +48,7 @@ export class AuthService {
                 return result;
             }
         } catch (e) {
-            // Ignore bcrypt errors (e.g. if db password is not a hash)
+            // Ignore bcrypt errors
         }
 
         return null;

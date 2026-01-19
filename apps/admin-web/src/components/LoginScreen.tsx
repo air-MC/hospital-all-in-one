@@ -2,8 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { getApiUrl } from '../utils/api';
 
-export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
-    const [email, setEmail] = useState('');
+export const LoginScreen = ({ onLogin }: { onLogin: (user: any) => void }) => {
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -15,9 +15,10 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
 
         try {
             const tempApiUrl = getApiUrl();
-            const trimmedEmail = email.trim(); // Trim email
+            const trimmedId = identifier.trim();
+            // We send 'email' key because controller expects it, but it contains identifier (email or username)
             const response = await axios.post(`${tempApiUrl}/auth/login`, {
-                email: trimmedEmail,
+                email: trimmedId,
                 password
             });
 
@@ -30,7 +31,7 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
             // Setup default headers for future requests
             axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
 
-            onLogin();
+            onLogin(user);
         } catch (err: any) {
             console.error('Login failed full error:', err);
 
@@ -58,13 +59,13 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">이메일 (ID)</label>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">아이디 (ID / Email)</label>
                             <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="system@hospital.com"
-                                className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                type="text"
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
+                                placeholder="admin / system@hospital.com"
+                                className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all box-border"
                                 autoFocus
                             />
                         </div>
@@ -75,7 +76,7 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="비밀번호 입력"
-                                className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono"
+                                className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono box-border"
                             />
                         </div>
 

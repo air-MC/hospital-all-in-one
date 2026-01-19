@@ -30,6 +30,7 @@ const ROOM_DEFS = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null); // Track user role
   const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'PATIENT' | 'WALKIN' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS' | 'SETTINGS' | 'SUPER_ADMIN'>('DASHBOARD');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,6 +98,16 @@ function App() {
   }, [isLoggedIn]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleLogin = (user: any) => {
+    setIsLoggedIn(true);
+    setUserRole(user.role);
+    // Auto-redirect super admin to their page
+    if (user.role === 'SUPER_ADMIN') {
+      setActiveMenu('SUPER_ADMIN');
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePatientClick = (surgery: any) => {
     if (surgery) {
       setSelectedPatientSurgery(surgery);
@@ -105,7 +116,7 @@ function App() {
   };
 
   if (!isLoggedIn) {
-    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+    return <LoginScreen onLogin={handleLogin} />;
   }
 
   return (
@@ -211,16 +222,18 @@ function App() {
             </li>
 
             <div className="h-4"></div>
-            {/* SUPER ADMIN MENU */}
-            <li>
-              <button
-                onClick={() => setActiveMenu('SUPER_ADMIN')}
-                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all border-2",
-                  activeMenu === 'SUPER_ADMIN' ? "bg-amber-400 text-amber-950 border-amber-300 shadow-md shadow-amber-200 font-black" : "border-slate-800 text-amber-500 hover:bg-slate-800 hover:text-amber-400")}
-              >
-                <span>👑</span> 슈퍼 관리자 (Network)
-              </button>
-            </li>
+            {/* SUPER ADMIN MENU - Role Protected */}
+            {userRole === 'SUPER_ADMIN' && (
+              <li>
+                <button
+                  onClick={() => setActiveMenu('SUPER_ADMIN')}
+                  className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all border-2",
+                    activeMenu === 'SUPER_ADMIN' ? "bg-amber-400 text-amber-950 border-amber-300 shadow-md shadow-amber-200 font-black" : "border-slate-800 text-amber-500 hover:bg-slate-800 hover:text-amber-400")}
+                >
+                  <span>👑</span> 슈퍼 관리자 (Network)
+                </button>
+              </li>
+            )}
 
           </ul>
 
@@ -347,7 +360,9 @@ function App() {
               {new Date().toLocaleDateString()}
             </span>
             <AdminNotifications />
-            <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs">A</div>
+            <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs">
+              {userRole === 'SUPER_ADMIN' ? 'S' : 'A'}
+            </div>
           </div>
         </header>
 
@@ -400,7 +415,8 @@ function App() {
             </div>
           )}
 
-          {activeMenu === 'SUPER_ADMIN' && (
+          {/* Render Super Admin Page only if permitted */}
+          {activeMenu === 'SUPER_ADMIN' && userRole === 'SUPER_ADMIN' && (
             <div className="max-w-6xl mx-auto">
               <SuperAdminPage />
             </div>
