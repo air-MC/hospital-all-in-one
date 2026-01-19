@@ -3,7 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "backend"
+  ],
   "scripts": {
+    "build:all": "npm run build --workspace=apps/admin-web && npm run build --workspace=apps/patient-web && rm -rf dist_server && mkdir -p dist_server/patient && cp -r apps/admin-web/dist/* dist_server/ && cp -r apps/patient-web/dist/* dist_server/patient/",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

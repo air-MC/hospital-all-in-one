@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/hospital-all-in-one/',
+  base: process.env.VERCEL ? '/' : '/hospital-all-in-one/',
 })
