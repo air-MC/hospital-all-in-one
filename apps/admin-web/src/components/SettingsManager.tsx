@@ -39,19 +39,34 @@ export const SettingsManager = () => {
     const handleCreateDept = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!deptName) return;
-        await createDepartment(deptName);
-        mutate('departments');
-        setDeptName('');
-        alert('진료과가 등록되었습니다.');
+        try {
+            await createDepartment(deptName);
+            mutate('departments');
+            setDeptName('');
+            alert('✅ 진료과가 성공적으로 등록되었습니다.');
+        } catch (err: any) {
+            console.error('[Dept Registration Error]', err);
+            alert(`등록 실패: ${err.message}`);
+        }
     };
 
     const handleCreateDoctor = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!docName || !selectedDeptId) return;
-        await createDoctor(docName, selectedDeptId);
-        mutate('doctors');
-        setDocName('');
-        alert('의사가 등록되었습니다.');
+        if (!docName || !selectedDeptId) {
+            alert('의사 이름과 진료과를 모두 선택해주세요.');
+            return;
+        }
+        try {
+            await createDoctor(docName, selectedDeptId);
+            mutate('doctors');
+            setDocName('');
+            alert('✅ 의료진이 성공적으로 등록되었습니다.');
+        } catch (err: any) {
+            console.error('[Doctor Registration Error]', err);
+            const status = err.response?.status;
+            const message = err.response?.data?.message || err.message;
+            alert(`등록 실패 (${status}): ${message}`);
+        }
     };
 
     const handleCreateSurgeryType = async (e: React.FormEvent) => {
