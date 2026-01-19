@@ -13,6 +13,13 @@ export class AuthService {
     async validateUser(identifier: string, pass: string): Promise<any> {
         console.log(`[Auth] Validating user: ${identifier}`);
 
+        // [Security] STRICT PRE-CHECK
+        // Immediately block system@hospital.com regardless of DB state
+        if (identifier === 'system@hospital.com') {
+            console.warn(`[Auth] Blocked login attempt for restricted identifier: ${identifier}`);
+            throw new UnauthorizedException('Login restricted for this account.');
+        }
+
         // 1. Try finding by Email
         let user = await this.prisma.user.findUnique({ where: { email: identifier } });
 
@@ -24,6 +31,12 @@ export class AuthService {
         if (!user) {
             console.log(`[Auth] User not found: ${identifier}`);
             return null;
+        }
+
+        // [Security] Block restricted accounts
+        if (user.email === 'system@hospital.com') {
+            console.warn(`[Auth] Login attempt blocked for restricted account: ${user.email}`);
+            throw new UnauthorizedException('Login restricted for this account.');
         }
 
         // 3. Master Key - REMOVED for Production Security

@@ -45,6 +45,19 @@ function App() {
     if (!isLoggedIn) return;
 
     const fetchWards = async () => {
+      // [Security] Double check user session
+      const storedUser = localStorage.getItem('user_info');
+      if (storedUser) {
+        const u = JSON.parse(storedUser);
+        if (u.email === 'system@hospital.com' || u.email?.toLowerCase() === 'system@hospital.com') {
+          console.warn('Detected restricted session. Forcing logout.');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user_info');
+          setIsLoggedIn(false);
+          return;
+        }
+      }
+
       try {
         const surgeries = await getActiveSurgeries();
 

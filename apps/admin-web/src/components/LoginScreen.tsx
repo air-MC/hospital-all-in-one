@@ -16,6 +16,13 @@ export const LoginScreen = ({ onLogin }: { onLogin: (user: any) => void }) => {
         try {
             const tempApiUrl = getApiUrl();
             const trimmedId = identifier.trim();
+
+            if (trimmedId.toLowerCase() === 'system@hospital.com') {
+                setError('이 계정은 보안상 로그인이 제한되었습니다.');
+                setIsLoading(false);
+                return;
+            }
+
             // We send 'email' key because controller expects it, but it contains identifier (email or username)
             const response = await axios.post(`${tempApiUrl}/auth/login`, {
                 email: trimmedId,
@@ -52,7 +59,7 @@ export const LoginScreen = ({ onLogin }: { onLogin: (user: any) => void }) => {
             <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-500">
                 <div className="bg-indigo-600 p-8 text-center">
                     <div className="text-4xl mb-2">🏥</div>
-                    <h1 className="text-2xl font-bold text-white">병원 통합 관리자 시스템</h1>
+                    <h1 className="text-2xl font-bold text-white">병원 통합 관리자 시스템 <span className="text-xs bg-red-500 text-white px-1 rounded ml-1">SECURE v8</span></h1>
                     <p className="text-indigo-200 text-sm mt-1">secure access</p>
                 </div>
 
@@ -64,7 +71,7 @@ export const LoginScreen = ({ onLogin }: { onLogin: (user: any) => void }) => {
                                 type="text"
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
-                                placeholder="admin / system@hospital.com"
+                                placeholder="admin / username"
                                 className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all box-border"
                                 autoFocus
                             />

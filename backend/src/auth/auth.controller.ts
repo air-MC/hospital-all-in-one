@@ -7,6 +7,11 @@ export class AuthController {
 
     @Post('login')
     async login(@Body() req: { email: string; password: string }) {
+        // [Security] Explicitly block restricted email at controller level
+        if (req.email === 'system@hospital.com' || req.email.toLowerCase() === 'system@hospital.com') {
+            throw new UnauthorizedException('System Account Login Restricted.');
+        }
+
         // req.body should have email and password
         const user = await this.authService.validateUser(req.email, req.password);
         if (!user) {

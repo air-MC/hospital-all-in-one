@@ -14,6 +14,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
+        // [Security] Block restricted accounts from using valid tokens
+        if (payload.email === 'system@hospital.com') {
+            throw new Error('Access denied for restricted account.');
+        }
+
         // payload contains sub, email, hospitalId, role
         return {
             id: payload.sub,
