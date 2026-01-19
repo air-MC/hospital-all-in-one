@@ -16,14 +16,25 @@ export const Dashboard = () => {
 
     if (isLoading) return <div className="flex items-center justify-center h-64 text-slate-400">📊 데이터를 불러오는 중...</div>;
     if (error) {
+        // Detailed error info
+        const status = error.response?.status;
+        const errorMessage = error.response?.data?.message || error.message;
+
         return (
             <div className="p-8 bg-red-50 text-red-600 rounded-xl border border-red-100 mb-4 flex flex-col items-center">
-                <p className="font-bold text-lg mb-2">📡 서버 연결 실패</p>
-                <p className="text-sm opacity-80 mb-4">API URL: <span className="font-mono bg-red-100 px-2 py-0.5 rounded">{API_URL}</span></p>
-                <p className="text-xs text-slate-500 mb-4 text-center max-w-md">
-                    통계 데이터를 가져오지 못했습니다. 환경 설정에서 API 주소가 올바른지 확인해주세요.<br />
-                    (Vercel/Railway 배포 주소가 맞는지 확인 필요)
+                <p className="font-bold text-lg mb-2">
+                    {status ? `📡 서버 오류 (${status})` : '📡 서버 연결 실패'}
                 </p>
+                <div className="text-sm opacity-80 mb-4 font-mono bg-red-100 px-3 py-2 rounded text-center">
+                    {errorMessage}
+                </div>
+                <p className="text-xs text-slate-500 mb-4 text-center max-w-md">
+                    {status === 500
+                        ? "서버 내부에서 오류가 발생했습니다. (DB 연결 또는 마이그레이션 필요)"
+                        : "API 주소가 올바른지 확인하거나 서버 상태를 점검해주세요."
+                    }
+                </p>
+                <p className="text-[10px] text-slate-400 mb-4">Target: {API_URL}</p>
                 <div className="flex gap-2">
                     <button
                         onClick={() => window.location.reload()}
