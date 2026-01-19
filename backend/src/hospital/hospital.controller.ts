@@ -68,4 +68,14 @@ export class HospitalController {
     async updatePatient(@Param('id') id: string, @Body() data: { name?: string; phone?: string; birthDate?: string; gender?: string }) {
         return this.hospitalService.updatePatient(id, data);
     }
+
+    @Get('doctors/:id/schedules')
+    async getDoctorSchedules(@Param('id') id: string) {
+        return this.hospitalService.getDoctorSchedules(id);
+    }
+
+    @Post('doctors/:id/schedules')
+    async updateDoctorSchedule(@Param('id') id: string, @Body() body: any[]) {
+        return this.hospitalService.updateDoctorSchedule(id, body);
+    }
 }

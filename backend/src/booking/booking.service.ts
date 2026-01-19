@@ -40,11 +40,27 @@ export class BookingService {
 
     async generateDailySlots(departmentId: string, date: Date, doctorId?: string) {
         const dayOfWeek = date.getDay();
-        console.log(`[BookingService] Generating slots for Dept: ${departmentId}, Date: ${date.toISOString()}, DayOfWeek: ${dayOfWeek}`);
+        console.log(`[BookingService] Generating slots for Dept: ${departmentId}, Doctor: ${doctorId || 'ALL'}, Date: ${date.toISOString()}, DayOfWeek: ${dayOfWeek}`);
 
-        const dbRule = await this.prisma.scheduleRule.findFirst({
-            where: { departmentId, dayOfWeek }
-        });
+        // Priority 1: Doctor-specific schedule (if doctorId provided)
+        // Priority 2: Department default schedule (doctorId = null)
+        let dbRule = null;
+
+        if (doctorId) {
+            // Try to find doctor-specific schedule first
+            dbRule = await this.prisma.scheduleRule.findFirst({
+                where: { departmentId, doctorId, dayOfWeek }
+            });
+            console.log(`[BookingService] Doctor-specific rule: ${dbRule ? 'FOUND' : 'NOT FOUND'}`);
+        }
+
+        // If no doctor-specific rule, use department default
+        if (!dbRule) {
+            dbRule = await this.prisma.scheduleRule.findFirst({
+                where: { departmentId, doctorId: null, dayOfWeek }
+            });
+            console.log(`[BookingService] Department default rule: ${dbRule ? 'FOUND' : 'NOT FOUND'}`);
+        }
 
         // Force non-null type by using default object if dbRule is missing
         const finalRule: any = dbRule || {
@@ -61,7 +77,7 @@ export class BookingService {
         };
 
         if (!dbRule) {
-            console.warn(`[BookingService] No ScheduleRule found for Dept: ${departmentId}, DayOfWeek: ${dayOfWeek}. Using DEFAULT rule.`);
+            console.warn(`[BookingService] No ScheduleRule found for Dept: ${departmentId}, Doctor: ${doctorId || 'DEFAULT'}, DayOfWeek: ${dayOfWeek}. Using FALLBACK rule.`);
         }
 
         if (finalRule.isHoliday) {
