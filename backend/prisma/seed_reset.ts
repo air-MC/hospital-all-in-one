@@ -92,7 +92,8 @@ async function main() {
                 name: '김환자',
                 phone: '01012345678',
                 birthDate: new Date('1980-01-01'),
-                gender: 'M'
+                gender: 'M',
+                hospitalId: hospital.id
             }
         });
     }
@@ -146,7 +147,8 @@ async function main() {
             admissionDate: admissionDate,
             dischargeDate: dischargeDate,
             consultNote: '상세불명의 위암. 조기 발견으로 예후가 좋을 것으로 예상됨.',
-            status: 'CONFIRMED'
+            status: 'CONFIRMED',
+            hospitalId: hospital.id
         }
     });
 
@@ -156,7 +158,8 @@ async function main() {
             surgeryCaseId: surgeryCase.id,
             patientId: patient.id,
             startDate: admissionDate,
-            endDate: dischargeDate
+            endDate: dischargeDate,
+            hospitalId: hospital.id
         }
     });
 
@@ -233,7 +236,8 @@ async function main() {
             patientId: patient.id,
             doctorsId: doctor.id,
             status: 'CHECKED_IN',
-            type: 'OUTPATIENT_FIRST'
+            type: 'OUTPATIENT_FIRST',
+            hospitalId: hospital.id
         }
     });
 
@@ -249,7 +253,8 @@ async function main() {
             entityTable: 'Appointment',
             entityId: 'system-seed',
             action: 'CREATE',
-            newValue: 'System initialized'
+            newValue: 'System initialized',
+            hospitalId: hospital.id
         }
     });
 

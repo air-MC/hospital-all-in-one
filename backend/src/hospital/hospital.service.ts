@@ -33,16 +33,30 @@ export class HospitalService {
         });
     }
 
-    async registerPatient(data: { name: string, phone: string, birthDate: string, gender: 'M' | 'F' }) {
+    async registerPatient(data: { name: string, phone: string, birthDate: string, gender: 'M' | 'F', hospitalId?: string }) {
         const normalized = data.phone.replace(/[^0-9]/g, '');
         console.log(`[HospitalService] Registering patient with normalized phone: ${normalized}`, data);
+
+        // Ensure hospital exists
+        let hospitalId = data.hospitalId;
+        if (!hospitalId) {
+            const defaultHospital = await this.prisma.hospital.findFirst();
+            if (defaultHospital) hospitalId = defaultHospital.id;
+            else {
+                // Create default if completely empty
+                const newH = await this.prisma.hospital.create({ data: { name: 'Main Hospital' } });
+                hospitalId = newH.id;
+            }
+        }
+
         try {
             return await this.prisma.patient.create({
                 data: {
                     name: data.name,
                     phone: normalized,
                     birthDate: new Date(data.birthDate),
-                    gender: data.gender
+                    gender: data.gender,
+                    hospitalId: hospitalId
                 }
             });
         } catch (error) {
@@ -90,6 +104,18 @@ export class HospitalService {
                 name,
                 departmentId
             }
+        });
+    }
+
+    // --- Hospital Management ---
+    async getHospitalInfo() {
+        return this.prisma.hospital.findFirst();
+    }
+
+    async updateHospitalInfo(id: string, name: string) {
+        return this.prisma.hospital.update({
+            where: { id },
+            data: { name }
         });
     }
 }

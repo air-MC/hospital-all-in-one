@@ -129,6 +129,17 @@ function App() {
                 <span>📊</span> 운영 현황 대시보드
               </button>
             </li>
+
+            {/* Moved Settings Menu Here for Visibility */}
+            <li>
+              <button
+                onClick={() => setActiveMenu('SETTINGS')}
+                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all",
+                  activeMenu === 'SETTINGS' ? "bg-slate-800 text-white shadow-md font-bold" : "text-slate-500 hover:bg-slate-800 hover:text-white")}
+              >
+                <span>⚙️</span> 환경 설정 (Settings)
+              </button>
+            </li>
             <div className="h-4"></div>
             <li>
               <button
@@ -177,16 +188,7 @@ function App() {
               </button>
             </li>
 
-            {/* New Settings Menu */}
-            <li>
-              <button
-                onClick={() => setActiveMenu('SETTINGS')}
-                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all",
-                  activeMenu === 'SETTINGS' ? "bg-slate-800 text-white shadow-md font-bold" : "text-slate-500 hover:bg-slate-800 hover:text-white")}
-              >
-                <span>⚙️</span> 환경 설정 (Settings)
-              </button>
-            </li>
+
           </ul>
 
           {/* Waiting List Section (Unassigned) */}

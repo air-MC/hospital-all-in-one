@@ -114,6 +114,11 @@ export class BookingService {
                 throw new ConflictException('Slot is no longer available');
             }
 
+            // [FIX] Get Patient's Hospital ID
+            const patient = await tx.patient.findUnique({ where: { id: patientId } });
+            if (!patient) throw new NotFoundException('Patient not found');
+
+
             if (updatedSlot.bookedCount === updatedSlot.capacity) {
                 await tx.slot.update({
                     where: { id: slotId },
@@ -122,7 +127,13 @@ export class BookingService {
             }
 
             const appointment = await tx.appointment.create({
-                data: { slotId, patientId, status: 'BOOKED', idempotencyKey }
+                data: {
+                    slotId,
+                    patientId,
+                    status: 'BOOKED',
+                    idempotencyKey,
+                    hospitalId: patient.hospitalId // [FIX] Injected
+                }
             });
 
             await tx.auditLog.create({
@@ -130,7 +141,8 @@ export class BookingService {
                     entityTable: 'Appointment',
                     entityId: appointment.id,
                     action: 'CREATE',
-                    newValue: JSON.stringify(appointment)
+                    newValue: JSON.stringify(appointment),
+                    hospitalId: patient.hospitalId // [FIX] Injected
                 }
             });
 
@@ -226,7 +238,8 @@ export class BookingService {
                     entityId: id,
                     action: 'STATUS_CHANGE',
                     oldValue: oldAppt.status,
-                    newValue: status
+                    newValue: status,
+                    hospitalId: oldAppt.hospitalId // [FIX] Preserved
                 }
             });
 

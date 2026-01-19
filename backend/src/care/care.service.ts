@@ -58,7 +58,8 @@ export class CareService {
                         admissionDate: admission,
                         dischargeDate: discharge,
                         status: 'CONFIRMED',
-                        consultNote: dto.diagnosis
+                        consultNote: dto.diagnosis,
+                        hospitalId: patient.hospitalId // [FIX] Injected
                     }
                 });
 
@@ -72,7 +73,8 @@ export class CareService {
                         surgeryCaseId: surgeryCase.id,
                         patientId: dto.patientId,
                         startDate: planStart,
-                        endDate: planEnd
+                        endDate: planEnd,
+                        hospitalId: patient.hospitalId // [FIX] Injected
                     }
                 });
 
@@ -378,6 +380,9 @@ export class CareService {
     }
 
     async createSurgeryType(data: any) {
+        // [FIX] Assign to Default Hospital if not provided (for now)
+        const hospital = await this.prisma.hospital.findFirst();
+
         return this.prisma.surgeryType.create({
             data: {
                 id: data.id, // ID is manually provided (e.g., 'ophthal_cataract')
@@ -385,7 +390,9 @@ export class CareService {
                 type: data.type,
                 isAdmissionRequired: data.isAdmissionRequired,
                 defaultStayDays: parseInt(data.defaultStayDays),
-                isPreOpExamRequired: data.isPreOpExamRequired
+                isPreOpExamRequired: data.isPreOpExamRequired,
+                hospitalId: hospital?.id || null, // [FIX] Linked
+                isSystemDefault: false
             }
         });
     }

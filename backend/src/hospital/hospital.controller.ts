@@ -39,4 +39,13 @@ export class HospitalController {
     async search(@Query('query') query: string) {
         return this.hospitalService.searchPatients(query);
     }
+    @Get('info')
+    async getHospitalInfo() {
+        return this.hospitalService.getHospitalInfo();
+    }
+
+    @Post('info/update')
+    async updateHospitalInfo(@Body() body: { id: string, name: string }) {
+        return this.hospitalService.updateHospitalInfo(body.id, body.name);
+    }
 }

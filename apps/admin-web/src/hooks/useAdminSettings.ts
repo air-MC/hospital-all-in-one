@@ -22,3 +22,11 @@ export const createDoctor = async (name: string, departmentId: string) => {
 export const createSurgeryType = async (data: any) => {
     return axios.post(`${API_URL}/care/surgery-types`, data);
 }
+
+export const getHospital = async () => {
+    return axios.get(`${API_URL}/hospital/info`).then(res => res.data);
+}
+
+export const updateHospital = async (id: string, name: string) => {
+    return axios.post(`${API_URL}/hospital/info/update`, { id, name });
+}

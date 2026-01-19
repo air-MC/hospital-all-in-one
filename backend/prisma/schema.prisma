@@ -22,6 +22,15 @@ model Hospital {
   name        String
   departments Department[]
   staff       Staff[]
+  
+  // Multi-Tenancy Relations
+  patients      Patient[]
+  appointments  Appointment[]
+  surgeryCases  SurgeryCase[]
+  carePlans     CarePlan[]
+  surgeryTypes  SurgeryType[]
+  auditLogs     AuditLog[]
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -128,6 +137,9 @@ model Patient {
   birthDate    DateTime
   gender       String
   
+  hospitalId   String
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id])
+
   appointments Appointment[]
   surgeryCases SurgeryCase[]
   carePlans    CarePlan[]
@@ -144,6 +156,10 @@ model Appointment {
   slot         Slot              @relation(fields: [slotId], references: [id])
   patientId    String
   patient      Patient           @relation(fields: [patientId], references: [id])
+  
+  hospitalId   String
+  hospital     Hospital          @relation(fields: [hospitalId], references: [id])
+
   doctorsId    String?           
   doctor       Doctor?           @relation(fields: [doctorsId], references: [id])
   
@@ -211,6 +227,11 @@ model SurgeryType {
   defaultStayDays     Int      @default(1)
   isPreOpExamRequired Boolean  @default(true)
   
+  // Master vs Custom Data
+  hospitalId          String?  // Null means System Master
+  hospital            Hospital? @relation(fields: [hospitalId], references: [id])
+  isSystemDefault     Boolean  @default(false)
+
   surgeryCases        SurgeryCase[]
 
   createdAt           DateTime @default(now())
@@ -228,6 +249,9 @@ model SurgeryCase {
   patient       Patient       @relation(fields: [patientId], references: [id])
   doctorId      String
   doctor        Doctor        @relation(fields: [doctorId], references: [id])
+  
+  hospitalId    String
+  hospital      Hospital      @relation(fields: [hospitalId], references: [id])
   
   surgeryTypeId String
   surgeryType   SurgeryType   @relation(fields: [surgeryTypeId], references: [id])
@@ -263,6 +287,9 @@ model CarePlan {
   patientId     String
   patient       Patient        @relation(fields: [patientId], references: [id])
   
+  hospitalId    String
+  hospital      Hospital       @relation(fields: [hospitalId], references: [id])
+
   items         CarePlanItem[]
   startDate     DateTime       
   endDate       DateTime       
@@ -341,6 +368,9 @@ model AuditLog {
   
   actorId     String?  // Staff ID or System
   actor       Staff?   @relation(fields: [actorId], references: [id])
+  
+  hospitalId  String?
+  hospital    Hospital? @relation(fields: [hospitalId], references: [id])
   
   oldValue    String?  @db.Text // JSON string
   newValue    String?  @db.Text // JSON string

@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
-import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType } from '../hooks/useAdminSettings';
+import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType, getHospital, updateHospital } from '../hooks/useAdminSettings';
 import { getSurgeryTypes } from '../hooks/useCareManager';
 
 export const SettingsManager = () => {
-    const [activeTab, setActiveTab] = useState<'DEPT' | 'DOCTOR' | 'SURGERY'>('DEPT');
+    const [activeTab, setActiveTab] = useState<'HOSPITAL' | 'DEPT' | 'DOCTOR' | 'SURGERY'>('HOSPITAL');
 
     // Data Fetching
     const { data: departments } = useSWR('departments', getDepartments);
     const { data: doctors } = useSWR('doctors', () => getDoctors());
     const { data: surgeryTypes } = useSWR('surgery-types', getSurgeryTypes);
+    const { data: hospital, mutate: mutateHospital } = useSWR('hospital', getHospital);
 
     // Form States
     const [deptName, setDeptName] = useState('');
     const [docName, setDocName] = useState('');
     const [selectedDeptId, setSelectedDeptId] = useState('');
+    const [hospitalName, setHospitalName] = useState('');
 
     // Surgery Type Form State
     const [surgeryForm, setSurgeryForm] = useState({
@@ -58,17 +60,62 @@ export const SettingsManager = () => {
         }
     };
 
+    const handleUpdateHospital = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!hospital || !hospitalName) return;
+        await updateHospital(hospital.id, hospitalName);
+        mutateHospital();
+        alert('병원 정보가 수정되었습니다.');
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Header / Tabs */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="flex border-b border-slate-100">
+                    <button onClick={() => setActiveTab('HOSPITAL')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'HOSPITAL' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏢 병원 정보</button>
                     <button onClick={() => setActiveTab('DEPT')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'DEPT' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏥 진료과 관리</button>
                     <button onClick={() => setActiveTab('DOCTOR')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'DOCTOR' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>👨‍⚕️ 의료진(의사) 관리</button>
                     <button onClick={() => setActiveTab('SURGERY')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'SURGERY' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🩺 수술/시술 항목 관리</button>
                 </div>
 
                 <div className="p-8">
+                    {/* --- HOSPITAL TAB --- */}
+                    {activeTab === 'HOSPITAL' && (
+                        <div className="max-w-xl mx-auto">
+                            <h3 className="font-bold text-lg mb-6">병원 기본 정보 관리</h3>
+                            {hospital ? (
+                                <form onSubmit={handleUpdateHospital} className="space-y-6 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Hospital ID (System)</label>
+                                        <div className="font-mono text-xs bg-slate-200 p-2 rounded text-slate-600 selection:bg-indigo-200">
+                                            {hospital.id}
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1">※ 고유 ID는 변경할 수 없습니다.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">병원 이름 (Hospital Name)</label>
+                                        <input
+                                            type="text"
+                                            placeholder={hospital.name}
+                                            value={hospitalName}
+                                            onChange={e => setHospitalName(e.target.value)}
+                                            className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                    <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold transition-all">
+                                        정보 수정 저장
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                    <p className="text-slate-500 mb-2">등록된 병원 정보가 없습니다.</p>
+                                    <p className="text-xs text-slate-400">진료과를 먼저 생성하면 자동으로 기본 병원이 생성됩니다.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* --- DEPARTMENT TAB --- */}
                     {activeTab === 'DEPT' && (
                         <div className="grid grid-cols-2 gap-8">

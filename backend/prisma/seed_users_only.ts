@@ -21,7 +21,11 @@ async function main() {
         create: {
             id: 'doc_test_01',
             name: 'Dr. Kim (Orthopedics)',
-            departmentId: dept.id
+            departmentId: dept.id,
+            // [FIX] hospitalId not needed for Doctor as it is optional? 
+            // Wait, schema says Doctor -> Department -> Hospital. Doctor does not have hospitalId directly?
+            // Let me check schema. Doctor: id, departmentId, department. Department: hospitalId.
+            // So Doctor is fine.
         }
     });
 
@@ -34,7 +38,8 @@ async function main() {
             name: '홍길동',
             phone: '01012345678',
             birthDate: new Date('1980-01-01'),
-            gender: 'M'
+            gender: 'M',
+            hospitalId: hospital.id // [FIX] Added
         }
     });
 
