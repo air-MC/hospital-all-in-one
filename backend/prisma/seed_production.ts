@@ -135,8 +135,9 @@ async function main() {
 
 main()
     .catch(e => {
-        console.error(e);
-        process.exit(1);
+        console.error("❌ Seeding Failed (Non-Fatal):", e);
+        // Do NOT exit with 1, so the server can still start
+        process.exit(0);
     })
     .finally(async () => {
         await prisma.$disconnect();
