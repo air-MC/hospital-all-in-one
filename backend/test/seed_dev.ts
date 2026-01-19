@@ -34,13 +34,30 @@ async function main() {
             data: {
                 id: systemId,
                 email: 'system@hospital.com',
-                password: 'hashed_password_here',
+                password: 'admin1234',
                 name: 'System Admin',
                 role: 'SUPER_ADMIN',
-                hospitalId: hospital.id // Link to main hospital
+                hospitalId: hospital.id
             }
         });
         console.log('🤖 System User ensured.');
+    }
+
+    // 0-1. Backup Admin (Emergency Access)
+    const backupId = 'BACKUP_ADMIN';
+    const backupUser = await prisma.user.findUnique({ where: { email: 'admin@test.com' } });
+    if (!backupUser) {
+        await prisma.user.create({
+            data: {
+                id: backupId,
+                email: 'admin@test.com',
+                password: '1234',
+                name: 'Backup Admin',
+                role: 'ADMIN',
+                hospitalId: hospital.id
+            }
+        });
+        console.log('🔑 Backup Admin ensured.');
     }
 
     // 3. Patients
