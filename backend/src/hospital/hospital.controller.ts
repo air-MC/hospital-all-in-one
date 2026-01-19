@@ -78,4 +78,21 @@ export class HospitalController {
     async updateDoctorSchedule(@Param('id') id: string, @Body() body: any[]) {
         return this.hospitalService.updateDoctorSchedule(id, body);
     }
+
+    // --- SUPER ADMIN ENDPOINTS ---
+
+    @Get('all')
+    async getAllHospitals() {
+        return this.hospitalService.getAllHospitals();
+    }
+
+    @Post('create')
+    async createHospital(@Body() body: { name: string, isMain?: boolean }) {
+        return this.hospitalService.createHospital(body.name, body.isMain);
+    }
+
+    @Post('admin/create')
+    async createHospitalAdmin(@Body() body: { hospitalId: string, username: string, name: string, password?: string }) {
+        return this.hospitalService.createHospitalAdmin(body.hospitalId, body);
+    }
 }

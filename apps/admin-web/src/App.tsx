@@ -10,6 +10,7 @@ import { AuditLogViewer } from './components/AuditLogViewer'
 import { SettingsManager } from './components/SettingsManager'
 import { LoginScreen } from './components/LoginScreen'
 import { AdminNotifications } from './components/AdminNotifications'
+import { SuperAdminPage } from './components/SuperAdminPage' // Import added
 import { getActiveSurgeries } from './hooks/useCareManager'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
@@ -29,7 +30,7 @@ const ROOM_DEFS = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'PATIENT' | 'WALKIN' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS' | 'SETTINGS'>('DASHBOARD');
+  const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'PATIENT' | 'WALKIN' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS' | 'SETTINGS' | 'SUPER_ADMIN'>('DASHBOARD');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedPatientSurgery, setSelectedPatientSurgery] = useState<any>(null);
@@ -209,6 +210,17 @@ function App() {
               </button>
             </li>
 
+            <div className="h-4"></div>
+            {/* SUPER ADMIN MENU */}
+            <li>
+              <button
+                onClick={() => setActiveMenu('SUPER_ADMIN')}
+                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all border-2",
+                  activeMenu === 'SUPER_ADMIN' ? "bg-amber-400 text-amber-950 border-amber-300 shadow-md shadow-amber-200 font-black" : "border-slate-800 text-amber-500 hover:bg-slate-800 hover:text-amber-400")}
+              >
+                <span>👑</span> 슈퍼 관리자 (Network)
+              </button>
+            </li>
 
           </ul>
 
@@ -327,7 +339,8 @@ function App() {
                       activeMenu === 'GUIDE' ? '🧭 외래 경로 관리' :
                         activeMenu === 'LOGS' ? '🛡️ 보안 감사 로그' :
                           activeMenu === 'SETTINGS' ? '⚙️ 병원 환경 설정' :
-                            '📋 환자별 케어 플랜 상세'}
+                            activeMenu === 'SUPER_ADMIN' ? '👑 병원 네트워크 및 계정 관리 (Super Admin)' :
+                              '📋 환자별 케어 플랜 상세'}
           </h2>
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500 bg-slate-50 py-1 px-3 rounded-full border">
@@ -387,6 +400,12 @@ function App() {
             </div>
           )}
 
+          {activeMenu === 'SUPER_ADMIN' && (
+            <div className="max-w-6xl mx-auto">
+              <SuperAdminPage />
+            </div>
+          )}
+
           {activeMenu === 'CARE' && (
             <div className="h-full">
               {selectedPatientSurgery ? (
@@ -409,3 +428,4 @@ function App() {
 }
 
 export default App
+

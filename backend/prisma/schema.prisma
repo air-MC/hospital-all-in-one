@@ -20,6 +20,7 @@ datasource db {
 model Hospital {
   id          String         @id @default(uuid())
   name        String
+  isMain      Boolean        @default(false) // Headquarters flag
   status      HospitalStatus @default(ACTIVE) // Super Admin Control
   departments Department[]
   users       User[]         // Renamed from Staff
@@ -74,10 +75,11 @@ model Doctor {
 // Renamed from 'Staff' to 'User' for clearer Auth context
 model User {
   id         String   @id @default(uuid())
-  hospitalId String
-  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+  hospitalId String?
+  hospital   Hospital? @relation(fields: [hospitalId], references: [id])
 
-  email    String @unique // Login ID (e.g., admin@hospital-a.com)
+  username String? @unique // For manual account creation
+  email    String? @unique // Login ID (e.g., admin@hospital-a.com)
   password String // Hashed Password
   name     String // Display Name (e.g., "Manager Kim")
 

@@ -345,4 +345,39 @@ export class HospitalService {
         }
         return results;
     }
+
+    // --- SUPER ADMIN FEATURES ---
+
+    async getAllHospitals() {
+        return this.prisma.hospital.findMany({
+            include: {
+                _count: {
+                    select: { departments: true, users: true, patients: true }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async createHospital(name: string, isMain: boolean = false) {
+        return this.prisma.hospital.create({
+            data: {
+                name,
+                isMain,
+                status: 'ACTIVE'
+            }
+        });
+    }
+
+    async createHospitalAdmin(hospitalId: string, data: { username: string, name: string, password?: string }) {
+        return this.prisma.user.create({
+            data: {
+                hospitalId,
+                username: data.username,
+                name: data.name,
+                password: data.password || '1234', // Default password if none provided
+                role: 'ADMIN'
+            }
+        });
+    }
 }
