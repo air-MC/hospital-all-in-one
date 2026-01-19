@@ -15,8 +15,9 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
 
         try {
             const tempApiUrl = getApiUrl();
+            const trimmedEmail = email.trim(); // Trim email
             const response = await axios.post(`${tempApiUrl}/auth/login`, {
-                email,
+                email: trimmedEmail,
                 password
             });
 
@@ -31,8 +32,14 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
 
             onLogin();
         } catch (err: any) {
-            console.error('Login failed', err);
-            const msg = err.response?.data?.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.';
+            console.error('Login failed full error:', err);
+
+            let msg = '';
+            if (!err.response) {
+                msg = `Network Error: ${err.message || '서버에 연결할 수 없습니다.'}`;
+            } else {
+                msg = `(${err.response.status}) ${err.response.data?.message || '로그인 실패'}`;
+            }
             setError(msg);
         } finally {
             setIsLoading(false);
@@ -90,6 +97,13 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
                                 </>
                             ) : '로그인'}
                         </button>
+
+                        <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
+                            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Connected to API</span>
+                            <code className="text-[10px] bg-slate-50 px-2 py-1 rounded border border-slate-100 text-indigo-500 font-mono">
+                                {getApiUrl()}
+                            </code>
+                        </div>
 
                         <div className="text-center text-xs text-slate-400 mt-4">
                             초기 비밀번호 분실 시 시스템 관리자에게 문의하세요.

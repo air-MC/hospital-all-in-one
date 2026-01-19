@@ -11,7 +11,9 @@ async function bootstrap() {
         'http://localhost:5173',
         'http://localhost:3000',
         'https://hospital-admin-tau.vercel.app',
-        'https://air-MC.github.io', // Add GitHub Pages
+        'https://air-MC.github.io',
+        'https://air-mc.github.io',
+        /\.github\.io$/,  // Allow any github.io subdomain
         /^https:\/\/.*\.vercel\.app$/
       ],
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
