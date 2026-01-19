@@ -298,6 +298,34 @@ export const SettingsManager = () => {
                     {/* --- SYSTEM CONNECTION TAB --- */}
                     {activeTab === 'SYSTEM' && (
                         <div className="max-w-xl mx-auto space-y-8">
+
+                            {/* 0. Patient App QR Code (New) */}
+                            {hospital && (
+                                <div>
+                                    <h3 className="font-bold text-lg mb-2 text-teal-600">📱 환자용 앱 접속 QR</h3>
+                                    <p className="text-sm text-slate-500 mb-6">
+                                        환자가 이 QR 코드를 스캔하면, <strong>{hospital.name}</strong> 전용 접수/예약 페이지로 즉시 연결됩니다.<br />
+                                        원무과나 대기실에 비치하여 사용하세요.
+                                    </p>
+
+                                    <div className="bg-white p-6 rounded-xl shadow-lg border border-teal-100 flex flex-col items-center text-center">
+                                        <div className="bg-white p-2 rounded-lg border-2 border-slate-900 mb-4">
+                                            <img
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://hospital-patient-web.vercel.app/?hospitalId=${hospital.id}`)}`}
+                                                alt="Patient App QR"
+                                                className="w-48 h-48"
+                                            />
+                                        </div>
+                                        <h4 className="font-bold text-slate-800 text-lg mb-1">{hospital.name}</h4>
+                                        <p className="text-xs text-slate-400 font-mono mb-4">{hospital.id}</p>
+
+                                        <div className="text-xs bg-slate-100 p-3 rounded text-slate-500 w-full break-all">
+                                            URL: https://hospital-patient-web.vercel.app/?hospitalId={hospital.id}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* 1. Connection Settings */}
                             <div>
                                 <h3 className="font-bold text-lg mb-2">🔌 백엔드 서버 연결 설정</h3>

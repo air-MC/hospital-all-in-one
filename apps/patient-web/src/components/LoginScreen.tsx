@@ -17,6 +17,17 @@ export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
     const [birthDate, setBirthDate] = useState('')
     const [gender, setGender] = useState<'M' | 'F'>('M')
 
+    // Context: Hospital ID (from QR/URL)
+    const [hospitalId] = useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        const idFromUrl = params.get('hospitalId');
+        if (idFromUrl) {
+            localStorage.setItem('context_hospital_id', idFromUrl);
+            return idFromUrl;
+        }
+        return localStorage.getItem('context_hospital_id') || '';
+    });
+
     const handleCheckPhone = async (e: React.FormEvent) => {
         e.preventDefault();
         if (phone.length < 10) {
@@ -30,6 +41,8 @@ export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
         try {
             const res = await axios.post(`${API_URL}/hospital/login`, { phone }, { timeout: 5000 });
             if (res.data) {
+                // Determine if patient belongs to current hospital context?
+                // For now, allow login if they exist in system.
                 onLogin(res.data.id);
             } else {
                 setView('REGISTER');
@@ -60,7 +73,8 @@ export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
                 name,
                 phone,
                 birthDate,
-                gender
+                gender,
+                hospitalId: hospitalId || undefined // Inject Hospital Context
             });
             onLogin(res.data.id);
         } catch (err) {
