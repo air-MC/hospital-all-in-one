@@ -50,6 +50,7 @@ model Department {
   doctors       Doctor[]
   scheduleRules ScheduleRule[]
   slots         Slot[]
+  surgeryTypes  SurgeryType[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
