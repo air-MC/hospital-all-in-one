@@ -1,4 +1,4 @@
-# Railway deployment configuration - Final Data Population
+# Railway deployment configuration - Force Rebuild 2026-01-19 v5
 [build]
 builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
