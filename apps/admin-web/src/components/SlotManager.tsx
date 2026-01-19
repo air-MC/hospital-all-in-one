@@ -41,8 +41,12 @@ export const SlotManager = () => {
 
         setGenerating(true);
         try {
-            await generateSlots(selectedDept, selectedDate, selectedDoctor);
-            alert('✅ 슬롯이 생성되었습니다.');
+            const res = await generateSlots(selectedDept, selectedDate, selectedDoctor);
+            if (res.data.count > 0) {
+                alert(`✅ 슬롯이 ${res.data.count}개 생성되었습니다.`);
+            } else {
+                alert(`⚠️ 생성된 슬롯이 없습니다. (원인: ${res.data.message || '휴일 또는 규칙 없음'})`);
+            }
             refreshSlots();
         } catch (error: any) {
             console.error('[Slot Generation Error]', error);
