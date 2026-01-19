@@ -149,10 +149,24 @@ export class BookingService {
             console.log(`[BookingService] Booking process started - Slot: ${slotId}, Patient: ${patientId}, Key: ${idempotencyKey}`);
 
             const slot = await tx.slot.findUnique({
-                where: { id: slotId }
+                where: { id: slotId },
+                include: { department: true }
             });
 
             if (!slot) throw new NotFoundException('Slot not found');
+
+            // NEW: Prevent multiple bookings in the same department
+            const existingInDept = await tx.appointment.findFirst({
+                where: {
+                    patientId,
+                    status: { in: ['BOOKED', 'CHECKED_IN'] },
+                    slot: { departmentId: slot.departmentId }
+                }
+            });
+
+            if (existingInDept) {
+                throw new ConflictException('해당 진료과에 이미 대기 중인 예약이 있습니다. 기존 예약을 취소하거나 완료 후 다시 시도해 주세요.');
+            }
 
             if (isBefore(slot.startDateTime, new Date())) {
                 throw new BadRequestException('Cannot book a past slot');

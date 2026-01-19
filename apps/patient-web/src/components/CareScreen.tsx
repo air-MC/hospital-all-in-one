@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useDailyCare, useMySurgery, completeCareItem } from '../hooks/useCareManager'
+import { useDailyCare, useMySurgery, completeCareItem, useMyAppointments, cancelAppointment } from '../hooks/useCareManager'
 import { useVisitGuide, completeStep } from '../hooks/useVisitGuide'
 import { DateTime } from 'luxon'
 import clsx from 'clsx'
@@ -17,6 +17,12 @@ export const CareScreen = ({ patientId, onOpenNoti, unreadCount }: CareScreenPro
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [completing, setCompleting] = useState<string | null>(null)
 
+    // Appointments Hook
+    const { appointments: myAppts, refresh: refreshAppts } = useMyAppointments(patientId);
+
+    // Filter active/upcoming appointments
+    const activeAppts = myAppts.filter((a: any) => a.status === 'BOOKED' || a.status === 'CHECKED_IN');
+
     // Visit Guide Integration
     const { steps: visitSteps, refresh: refreshVisit } = useVisitGuide(patientId);
 
@@ -33,6 +39,16 @@ export const CareScreen = ({ patientId, onOpenNoti, unreadCount }: CareScreenPro
             refreshVisit();
         } catch (e) {
             alert('상태 업데이트 실패');
+        }
+    };
+    const handleCancel = async (apptId: string) => {
+        if (!confirm('예약을 취소하시겠습니까?\n취소 후 다시 예약할 수 있습니다.')) return;
+        try {
+            await cancelAppointment(apptId);
+            alert('✅ 예약이 취소되었습니다.');
+            refreshAppts();
+        } catch (e) {
+            alert('취소 처리 실패');
         }
     };
 
@@ -140,6 +156,42 @@ export const CareScreen = ({ patientId, onOpenNoti, unreadCount }: CareScreenPro
             {/* Content Area */}
             {activeTab === 'OUTPATIENT' ? (
                 <div className="p-4 space-y-4">
+                    {/* My Appointments List */}
+                    {activeAppts.length > 0 && (
+                        <div className="space-y-3">
+                            <h3 className="text-[10px] font-black text-slate-400 ml-1 uppercase tracking-widest">📅 나의 진료 예약</h3>
+                            {activeAppts.map((appt: any) => (
+                                <div key={appt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center group">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 font-black">
+                                            <div className="text-[10px] leading-none uppercase">{DateTime.fromISO(appt.slot.startDateTime).toFormat('MMM')}</div>
+                                            <div className="text-lg leading-none mt-0.5">{DateTime.fromISO(appt.slot.startDateTime).toFormat('dd')}</div>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-black text-slate-800 text-sm">{appt.slot.department.name}</span>
+                                                <span className="text-[10px] font-bold text-slate-400">{DateTime.fromISO(appt.slot.startDateTime).toFormat('HH:mm')}</span>
+                                            </div>
+                                            <div className="text-[9px] text-slate-500 font-bold">담당의: {appt.slot.doctor?.name || '미지정'}</div>
+                                        </div>
+                                    </div>
+                                    {appt.status === 'BOOKED' && (
+                                        <button
+                                            onClick={() => handleCancel(appt.id)}
+                                            className="text-[10px] font-black text-rose-500 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100 active:scale-90 transition-all"
+                                        >
+                                            예약 취소
+                                        </button>
+                                    )}
+                                    {appt.status === 'CHECKED_IN' && (
+                                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                            접수 완료
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     {visitSteps && visitSteps.length > 0 ? (
                         <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
                             <div className="flex justify-between items-center mb-4 text-xs font-bold">

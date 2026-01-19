@@ -63,3 +63,19 @@ export const addCareItem = async (dto: any) => {
 export const deleteCareItem = async (id: string) => {
     return axios.delete(`${API_URL}/care/items/${id}`);
 };
+
+export const useMyAppointments = (patientId: string) => {
+    const { data, error, mutate } = useSWR(
+        patientId ? `${API_URL}/booking/appointments?patientId=${patientId}` : null,
+        fetcher
+    );
+    return {
+        appointments: data || [],
+        isLoading: !error && !data,
+        refresh: mutate
+    };
+};
+
+export const cancelAppointment = async (apptId: string) => {
+    return axios.patch(`${API_URL}/booking/appointments/${apptId}/status`, { status: 'CANCELLED' });
+};
