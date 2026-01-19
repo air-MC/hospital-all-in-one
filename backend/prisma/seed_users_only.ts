@@ -40,7 +40,8 @@ async function main() {
             phone: '01012345678',
             birthDate: new Date('1980-01-01'),
             gender: 'M',
-            hospitalId: hospital.id // [FIX] Added
+            hospitalId: hospital.id,
+            patientNo: 'P-000000-DEMO'
         }
     });
 
