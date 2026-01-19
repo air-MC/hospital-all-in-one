@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType, getHospital, updateHospital, updateHospitalStatus } from '../hooks/useAdminSettings';
-import { getSurgeryTypes } from '../hooks/useCareManager';
+import { getSurgeryTypes, deleteSurgeryType } from '../hooks/useCareManager';
 
 export const SettingsManager = () => {
     const [activeTab, setActiveTab] = useState<'HOSPITAL' | 'DEPT' | 'DOCTOR' | 'SURGERY' | 'SYSTEM'>('HOSPITAL');
@@ -33,7 +33,8 @@ export const SettingsManager = () => {
         departmentId: '',
         isAdmissionRequired: true,
         defaultStayDays: 1,
-        isPreOpExamRequired: true
+        isPreOpExamRequired: true,
+        medicationStopDays: 7
     });
 
     const handleCreateDept = async (e: React.FormEvent) => {
@@ -75,14 +76,23 @@ export const SettingsManager = () => {
             await createSurgeryType(surgeryForm);
             mutate('surgery-types');
             setSurgeryForm({
-                id: '', name: '', type: 'SURGERY', departmentId: '', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true
+                id: '', name: '', type: 'SURGERY', departmentId: '', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true, medicationStopDays: 7
             });
             alert('수술/시술 항목이 등록되었습니다.');
         } catch (e) {
             alert('등록 실패: ID가 중복되거나 입력이 잘못되었습니다.');
         }
     };
-
+    const handleDeleteSurgeryType = async (id: string, name: string) => {
+        if (!confirm(`'${name}' 수술 항목을 정말 삭제하시겠습니까?`)) return;
+        try {
+            await deleteSurgeryType(id);
+            mutate('surgery-types');
+            alert('항목이 삭제되었습니다.');
+        } catch (e: any) {
+            alert(`삭제 실패: ${e.message}`);
+        }
+    };
     const handleUpdateHospital = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!hospital || !hospitalName) return;
@@ -298,6 +308,18 @@ export const SettingsManager = () => {
                                             <span className="text-sm font-bold text-slate-700">수술 전 검사 필수</span>
                                         </label>
                                     </div>
+                                    <div className="pt-2">
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">💊 기본 약물 중단 안내 (D-Day 기준)</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                value={surgeryForm.medicationStopDays}
+                                                onChange={e => setSurgeryForm({ ...surgeryForm, medicationStopDays: parseInt(e.target.value) })}
+                                                className="w-20 border p-3 rounded-lg text-center font-bold"
+                                            />
+                                            <span className="text-sm font-bold text-slate-500">일 전부터 중단 (0은 제한없음)</span>
+                                        </div>
+                                    </div>
                                     <button className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold mt-4">항목 등록하기</button>
                                 </form>
                             </div>
@@ -315,9 +337,18 @@ export const SettingsManager = () => {
                                                     {t.type}
                                                 </span>
                                             </div>
-                                            <div className="mt-2 flex gap-2 text-[10px] text-slate-500">
-                                                {t.isAdmissionRequired && <span className="bg-slate-100 px-1.5 py-0.5 rounded">🛏️ {t.defaultStayDays}일 입원</span>}
-                                                {t.isPreOpExamRequired && <span className="bg-slate-100 px-1.5 py-0.5 rounded">💉 검사필요</span>}
+                                            <div className="mt-2 flex gap-2 text-[10px] text-slate-500 items-center justify-between">
+                                                <div className="flex gap-2">
+                                                    {t.isAdmissionRequired && <span className="bg-slate-100 px-1.5 py-0.5 rounded">🛏️ {t.defaultStayDays}일 입원</span>}
+                                                    {t.isPreOpExamRequired && <span className="bg-slate-100 px-1.5 py-0.5 rounded">💉 검사필요</span>}
+                                                    {t.medicationStopDays > 0 && <span className="bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded font-bold">💊 D-{t.medicationStopDays} 약물중단</span>}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteSurgeryType(t.id, t.name)}
+                                                    className="text-slate-300 hover:text-rose-500 transition ml-2"
+                                                >
+                                                    🗑️
+                                                </button>
                                             </div>
                                         </li>
                                     ))}

@@ -80,7 +80,11 @@ export class CareService {
 
                 // 5. Generate Standard Care Items (Template Engine - Dynamic)
                 console.log("[CareService] Transaction step 3: generateStandardCareItems");
-                await this.generateStandardCareItems(tx, carePlan.id, sDate, surgeryType);
+                const surgeryTypeWithOverride = {
+                    ...surgeryType,
+                    medicationStopDays: dto.medicationStopDays ?? surgeryType.medicationStopDays
+                };
+                await this.generateStandardCareItems(tx, carePlan.id, sDate, surgeryTypeWithOverride);
 
                 // 6. Create Initial Notification
                 console.log("[CareService] Transaction step 4: notification");
@@ -120,14 +124,15 @@ export class CareService {
 
         // --- Pre-Admission Phase ---
 
-        // [D-7] Medication Safety
+        // [D-? ] Medication Safety
+        const stopDays = type.medicationStopDays || 7;
         items.push({
             carePlanId,
-            category: CareCategory.MEDICATION, // Changed from NOTICE
-            priority: 'CRITICAL', // Explicit Priority
-            title: '복용 약물 중단 (아스피린/와파린 등)',
-            description: '출혈 위험이 있는 혈전 용해제 복용을 오늘부터 중단해주세요. (담당의 상담 필수)',
-            scheduledAt: subDays(sDate, 7)
+            category: CareCategory.MEDICATION,
+            priority: 'CRITICAL',
+            title: `복용 약물 중단 (최소 ${stopDays}일 전)`,
+            description: '출혈 위험이 있는 혈전 용해제(아스피린/와파린 등) 복용을 오늘부터 중단해주세요. (담당의 상담 필수)',
+            scheduledAt: subDays(sDate, stopDays)
         });
 
         // [D-3] Pre-op Testing
@@ -391,6 +396,7 @@ export class CareService {
                 isAdmissionRequired: data.isAdmissionRequired,
                 defaultStayDays: parseInt(data.defaultStayDays),
                 isPreOpExamRequired: data.isPreOpExamRequired,
+                medicationStopDays: data.medicationStopDays ? parseInt(data.medicationStopDays) : 7,
                 hospitalId: hospital?.id || null, // [FIX] Linked
                 departmentId: data.departmentId || null,
                 isSystemDefault: false
@@ -448,6 +454,42 @@ export class CareService {
         return this.prisma.carePlanItem.findMany({
             where: { carePlanId },
             orderBy: { scheduledAt: 'asc' }
+        });
+    }
+
+    async deleteSurgeryCase(id: string) {
+        return await this.prisma.$transaction(async (tx) => {
+            // 1. Find CarePlan ID
+            const carePlan = await tx.carePlan.findUnique({
+                where: { surgeryCaseId: id }
+            });
+
+            if (carePlan) {
+                // 2. Delete CarePlanItems
+                await tx.carePlanItem.deleteMany({
+                    where: { carePlanId: carePlan.id }
+                });
+                // 3. Delete CarePlan
+                await tx.carePlan.delete({
+                    where: { id: carePlan.id }
+                });
+            }
+
+            // 4. Delete Notifications related to this surgery
+            await tx.notification.deleteMany({
+                where: { triggerId: id }
+            });
+
+            // 5. Delete SurgeryCase
+            return await tx.surgeryCase.delete({
+                where: { id }
+            });
+        });
+    }
+
+    async deleteSurgeryType(id: string) {
+        return this.prisma.surgeryType.delete({
+            where: { id }
         });
     }
 }

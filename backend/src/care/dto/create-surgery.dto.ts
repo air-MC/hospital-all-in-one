@@ -6,4 +6,5 @@ export class CreateSurgeryDto {
     admissionDate: string; // ISO Date
     dischargeDate: string; // ISO Date
     diagnosis: string;     // e.g., "Knee OA (Osteoarthritis)"
+    medicationStopDays?: number; // Optional override
 }

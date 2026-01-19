@@ -111,4 +111,14 @@ export class CareController {
         // Generic update for roomNumber, diagnosis, etc.
         return this.careService.updateSurgery(id, body);
     }
+
+    @Delete('surgeries/:id')
+    async deleteSurgery(@Param('id') id: string) {
+        return this.careService.deleteSurgeryCase(id);
+    }
+
+    @Delete('surgery-types/:id')
+    async deleteSurgeryType(@Param('id') id: string) {
+        return this.careService.deleteSurgeryType(id);
+    }
 }

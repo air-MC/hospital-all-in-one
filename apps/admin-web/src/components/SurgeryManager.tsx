@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { registerSurgery, getSurgeryTypes, getActiveSurgeries, searchPatients } from '../hooks/useCareManager';
+import { registerSurgery, getSurgeryTypes, getActiveSurgeries, searchPatients, deleteSurgery } from '../hooks/useCareManager';
 import { getDepartments, getDoctors } from '../hooks/useAdminSettings';
 import type { CreateSurgeryDto } from '../hooks/useCareManager';
 import { DateTime } from 'luxon';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import clsx from 'clsx';
 // Removed CarePlanEditor import as it's not used here anymore
 
 export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any) => void }) => {
     // Fetch Data
     const { data: surgeryTypes, error: typesError } = useSWR('surgery-types', getSurgeryTypes);
-    const { data: activeSurgeries } = useSWR('active-surgeries', getActiveSurgeries, { refreshInterval: 5000 });
+    const { data: activeSurgeries, mutate } = useSWR('active-surgeries', getActiveSurgeries, { refreshInterval: 5000 });
     const { data: departments } = useSWR('departments', getDepartments);
     const { data: doctors } = useSWR('doctors', () => getDoctors());
 
@@ -31,7 +31,8 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
         surgeryDate: '',
         admissionDate: '',
         dischargeDate: '',
-        diagnosis: ''
+        diagnosis: '',
+        medicationStopDays: 7
     });
 
     // Handle Patient Search
@@ -76,7 +77,8 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
             surgeryDate: surgeryDateTime,
             admissionDate: admission.toISODate() || '',
             dischargeDate: discharge.toISODate() || '',
-            diagnosis: prev.diagnosis || type.name
+            diagnosis: prev.diagnosis || type.name,
+            medicationStopDays: prev.medicationStopDays || type.medicationStopDays || 7
         }));
 
     }, [selectedTypeId, surgeryDateTime, surgeryTypes]);
@@ -126,8 +128,20 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
         }
     };
 
+    const handleDeleteSurgery = async (id: string, patientName: string) => {
+        if (!confirm(`${patientName} 환자의 수술 기록과 케어 플랜을 완전히 삭제하시겠습니까?`)) return;
+        try {
+            await deleteSurgery(id);
+            mutate('active-surgeries');
+            alert('✅ 수술 기록이 삭제되었습니다.');
+        } catch (e: any) {
+            alert(`삭제 실패: ${e.message}`);
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type } = e.target as HTMLInputElement;
+        setFormData({ ...formData, [name]: type === 'number' ? parseInt(value) : value });
     };
 
     if (typesError) return <div className="p-4 bg-red-50 border border-red-100 rounded text-red-600 flex items-center gap-2"><span>⚠️</span> 수술 종류 로딩 실패 (Backend 연결 확인)</div>;
@@ -284,6 +298,18 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                                         />
                                     </div>
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">⑦ 약물 중단 (D-Day 기준)</label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="number" name="medicationStopDays"
+                                            value={formData.medicationStopDays} onChange={handleChange}
+                                            className="w-24 border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none transition text-center font-bold"
+                                        />
+                                        <span className="text-sm font-bold text-slate-500">일 전부터 중단</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-1">※ 혈전용해제 등 주의 약물 복용 중단 안내일입니다.</p>
+                                </div>
                             </div>
                             <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex justify-between items-center text-amber-900 opacity-80">
                                 <div className="text-xs font-bold flex items-center gap-2">
@@ -371,12 +397,21 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => onSelectSurgery && onSelectSurgery(surgery)}
-                                    className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition"
-                                >
-                                    케어 플랜 관리 →
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => onSelectSurgery && onSelectSurgery(surgery)}
+                                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold hover:bg-indigo-100 transition whitespace-nowrap"
+                                    >
+                                        케어 관리 →
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteSurgery(surgery.id, surgery.patient?.name || '환자') }}
+                                        className="p-2 text-slate-300 hover:text-rose-500 transition"
+                                        title="기록 삭제"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
                             </div>
                         ))
                     )}

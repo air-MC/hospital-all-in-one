@@ -244,6 +244,7 @@ model SurgeryType {
   isAdmissionRequired Boolean  @default(true)
   defaultStayDays     Int      @default(1)
   isPreOpExamRequired Boolean  @default(true)
+  medicationStopDays  Int      @default(7)
   
   // Master vs Custom Data
   hospitalId          String?  // Null means System Master

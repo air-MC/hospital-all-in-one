@@ -11,6 +11,7 @@ export interface SurgeryType {
     isAdmissionRequired: boolean;
     defaultStayDays: number;
     isPreOpExamRequired: boolean;
+    medicationStopDays: number;
 }
 
 export interface CreateSurgeryDto {
@@ -22,6 +23,7 @@ export interface CreateSurgeryDto {
     dischargeDate: string;
     diagnosis: string;
     roomNumber?: string;
+    medicationStopDays?: number;
 }
 
 export const getSurgeryTypes = async () => {
@@ -30,6 +32,14 @@ export const getSurgeryTypes = async () => {
 
 export const registerSurgery = async (dto: CreateSurgeryDto) => {
     return axios.post(`${API_URL}/care/surgeries`, dto);
+};
+
+export const deleteSurgery = async (id: string) => {
+    return axios.delete(`${API_URL}/care/surgeries/${id}`);
+};
+
+export const deleteSurgeryType = async (id: string) => {
+    return axios.delete(`${API_URL}/care/surgery-types/${id}`);
 };
 
 export const getActiveSurgeries = async () => {
