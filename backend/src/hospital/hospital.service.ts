@@ -189,15 +189,20 @@ export class HospitalService {
         for (const s of schedules) {
             try {
                 const dayOfWeek = Number(s.dayOfWeek);
+                if (isNaN(dayOfWeek)) {
+                    console.warn(`[HospitalService] Invalid dayOfWeek: ${s.dayOfWeek}, skipping.`);
+                    continue;
+                }
+
                 const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
                 const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
 
-                // 1. Manually find existing rule to avoid unique constraint mismatch with NULLs
+                console.log(`[HospitalService] Searching existing rule - Dept: ${departmentId}, Day: ${dayOfWeek}`);
                 const existing = await this.prisma.scheduleRule.findFirst({
                     where: {
                         departmentId,
                         doctorId: null,
-                        dayOfWeek
+                        dayOfWeek: dayOfWeek
                     }
                 });
 
@@ -213,24 +218,26 @@ export class HospitalService {
 
                 let rule;
                 if (existing) {
+                    console.log(`[HospitalService] Updating rule ID: ${existing.id}`);
                     rule = await this.prisma.scheduleRule.update({
                         where: { id: existing.id },
                         data
                     });
                 } else {
+                    console.log(`[HospitalService] Creating new rule for day ${dayOfWeek}`);
                     rule = await this.prisma.scheduleRule.create({
                         data: {
                             ...data,
                             departmentId,
                             doctorId: null,
-                            dayOfWeek
+                            dayOfWeek: dayOfWeek
                         }
                     });
                 }
                 results.push(rule);
-            } catch (error) {
-                console.error(`[HospitalService] Failed to update department schedule for day ${s.dayOfWeek}:`, error);
-                throw error;
+            } catch (error: any) {
+                console.error(`[HospitalService] ERROR for day ${s.dayOfWeek}:`, error.message);
+                throw new Error(`Failed to update day ${s.dayOfWeek}: ${error.message}`);
             }
         }
         return results;

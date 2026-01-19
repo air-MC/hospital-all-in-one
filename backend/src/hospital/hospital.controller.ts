@@ -61,7 +61,12 @@ export class HospitalController {
 
     @Post('departments/:id/schedules')
     async updateDepartmentSchedule(@Param('id') id: string, @Body() body: any[]) {
-        return this.hospitalService.updateDepartmentSchedule(id, body);
+        try {
+            return await this.hospitalService.updateDepartmentSchedule(id, body);
+        } catch (error: any) {
+            console.error('[HospitalController] updateDepartmentSchedule failed:', error);
+            throw error;
+        }
     }
 
     @Post('patients/:id/update')
