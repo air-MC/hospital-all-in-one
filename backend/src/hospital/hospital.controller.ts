@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param } from '@nestjs/common';
 import { HospitalService } from './hospital.service';
 
 @Controller('hospital')
@@ -52,5 +52,15 @@ export class HospitalController {
     @Post('info/status')
     async updateHospitalStatus(@Body() body: { id: string, status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED' }) {
         return this.hospitalService.updateHospitalStatus(body.id, body.status);
+    }
+
+    @Get('departments/:id/schedules')
+    async getDepartmentSchedules(@Param('id') id: string) {
+        return this.hospitalService.getDepartmentSchedules(id);
+    }
+
+    @Post('departments/:id/schedules')
+    async updateDepartmentSchedule(@Param('id') id: string, @Body() body: any[]) {
+        return this.hospitalService.updateDepartmentSchedule(id, body);
     }
 }

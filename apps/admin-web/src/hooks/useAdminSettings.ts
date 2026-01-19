@@ -34,3 +34,11 @@ export const updateHospital = async (id: string, name: string) => {
 export const updateHospitalStatus = async (id: string, status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED') => {
     return axios.post(`${API_URL}/hospital/info/status`, { id, status });
 }
+
+export const getDepartmentSchedules = async (departmentId: string) => {
+    return axios.get(`${API_URL}/hospital/departments/${departmentId}/schedules`).then(res => res.data);
+}
+
+export const updateDepartmentSchedule = async (departmentId: string, schedules: any[]) => {
+    return axios.post(`${API_URL}/hospital/departments/${departmentId}/schedules`, schedules);
+}

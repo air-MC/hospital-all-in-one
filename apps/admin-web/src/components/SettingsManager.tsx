@@ -2,9 +2,10 @@ import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType, getHospital, updateHospital, updateHospitalStatus } from '../hooks/useAdminSettings';
 import { getSurgeryTypes, deleteSurgeryType } from '../hooks/useCareManager';
+import { ScheduleSettings } from './ScheduleSettings';
 
 export const SettingsManager = () => {
-    const [activeTab, setActiveTab] = useState<'HOSPITAL' | 'DEPT' | 'DOCTOR' | 'SURGERY' | 'SYSTEM'>('HOSPITAL');
+    const [activeTab, setActiveTab] = useState<'HOSPITAL' | 'DEPT' | 'DOCTOR' | 'SURGERY' | 'SCHEDULE' | 'SYSTEM'>('HOSPITAL');
 
     // Data Fetching
     const { data: departments } = useSWR('departments', getDepartments);
@@ -120,6 +121,7 @@ export const SettingsManager = () => {
                     <button onClick={() => setActiveTab('DEPT')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'DEPT' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏥 진료과</button>
                     <button onClick={() => setActiveTab('DOCTOR')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'DOCTOR' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>👨‍⚕️ 의료진</button>
                     <button onClick={() => setActiveTab('SURGERY')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'SURGERY' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🩺 수술관리</button>
+                    <button onClick={() => setActiveTab('SCHEDULE')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'SCHEDULE' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>⏰ 근무시간</button>
                     <button onClick={() => setActiveTab('SYSTEM')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'SYSTEM' ? 'bg-slate-800 text-white border-b-2 border-slate-600' : 'text-slate-500 hover:bg-slate-50'}`}>🔌 시스템 연결</button>
                 </div>
 
@@ -241,6 +243,8 @@ export const SettingsManager = () => {
                     {/* --- SURGERY TYPE TAB --- */}
                     {activeTab === 'SURGERY' && (
                         <div className="grid grid-cols-2 gap-8">
+                            {/* ... (Existing Surgery Tab Content) ... */}
+                            {/* NOTE: I am not replacing the inner content, I need to match carefully or just append the new block */}
                             <div>
                                 <h3 className="font-bold text-lg mb-4">신규 수술/시술 항목 등록</h3>
                                 <form onSubmit={handleCreateSurgeryType} className="space-y-4">
@@ -354,6 +358,13 @@ export const SettingsManager = () => {
                                     ))}
                                 </ul>
                             </div>
+                        </div>
+                    )}
+
+                    {/* --- SCHEDULE TAB --- */}
+                    {activeTab === 'SCHEDULE' && (
+                        <div className="max-w-4xl mx-auto">
+                            <ScheduleSettings />
                         </div>
                     )}
 

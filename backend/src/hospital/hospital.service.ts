@@ -134,4 +134,47 @@ export class HospitalService {
             data: { status }
         });
     }
+
+    async getDepartmentSchedules(departmentId: string) {
+        return this.prisma.scheduleRule.findMany({
+            where: { departmentId },
+            orderBy: { dayOfWeek: 'asc' }
+        });
+    }
+
+    async updateDepartmentSchedule(departmentId: string, schedules: any[]) {
+        const results = [];
+        for (const s of schedules) {
+            const rule = await this.prisma.scheduleRule.upsert({
+                where: {
+                    departmentDayIndex: {
+                        departmentId,
+                        dayOfWeek: s.dayOfWeek
+                    }
+                },
+                update: {
+                    startTime: s.startTime,
+                    endTime: s.endTime,
+                    breakStart: s.breakStart,
+                    breakEnd: s.breakEnd,
+                    isHoliday: s.isHoliday,
+                    slotDuration: Number(s.slotDuration),
+                    capacityPerSlot: Number(s.capacityPerSlot)
+                },
+                create: {
+                    departmentId,
+                    dayOfWeek: s.dayOfWeek,
+                    startTime: s.startTime,
+                    endTime: s.endTime,
+                    breakStart: s.breakStart,
+                    breakEnd: s.breakEnd,
+                    isHoliday: s.isHoliday,
+                    slotDuration: Number(s.slotDuration) || 30,
+                    capacityPerSlot: Number(s.capacityPerSlot) || 3
+                }
+            });
+            results.push(rule);
+        }
+        return results;
+    }
 }
