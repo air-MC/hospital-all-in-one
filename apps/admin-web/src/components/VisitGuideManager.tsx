@@ -102,6 +102,12 @@ export const VisitGuideManager = () => {
         const newStatus = step.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
         try {
             await axios.patch(`${API_URL}/visit-guide/${step.id}`, { status: newStatus });
+
+            // USER POLICY: Payment at Administration marks end of all activities
+            if (newStatus === 'COMPLETED' && (step.name.includes('수납') || step.name.includes('원무과'))) {
+                alert('✅ 원무과 수납이 완료되었습니다.\n모든 진료 과정이 종료되었습니다.');
+            }
+
             mutate();
         } catch (e) {
             alert('Failed to update status');
@@ -121,8 +127,9 @@ export const VisitGuideManager = () => {
     return (
         <div className="flex gap-6 h-[calc(100vh-140px)] animate-in fade-in duration-500">
             {/* Left: Patient Search & Info */}
-            <div className="w-[380px] flex flex-col gap-6 shrink-0">
+            <div className="w-[420px] flex flex-col gap-6 shrink-0">
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    {/* ... (Search and Patient Info - keeping logic same but wider container) ... */}
                     <h2 className="text-sm font-black text-slate-400 mb-4 uppercase tracking-widest flex items-center gap-2">
                         <span>🔍</span> 환자 검색 및 선택
                     </h2>
@@ -183,28 +190,47 @@ export const VisitGuideManager = () => {
 
                 {selectedPatient && (
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex-1 overflow-y-auto custom-scrollbar">
-                        <h2 className="text-sm font-black text-slate-400 mb-4 uppercase tracking-widest">📍 경로 프리셋 (Step Presets)</h2>
-                        <div className="mb-4">
-                            <label className="text-[10px] font-black text-slate-400 mb-1.5 ml-1 block uppercase">위치 수동 수정</label>
-                            <input
-                                className="w-full p-3 text-sm bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold"
-                                placeholder="기본 위치 대신 적용할 장소"
-                                value={newItemLocation}
-                                onChange={e => setNewItemLocation(e.target.value)}
-                            />
+                        <h2 className="text-sm font-black text-slate-400 mb-4 uppercase tracking-widest">📍 경로 설계 (Step Builder)</h2>
+
+                        {/* Custom Input */}
+                        <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <label className="text-[10px] font-black text-slate-400 mb-2 block uppercase">➕ 임의 경로 추가 (Custom)</label>
+                            <div className="flex gap-2">
+                                <input
+                                    className="flex-1 p-3 text-sm bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none transition-all font-bold placeholder:font-normal"
+                                    placeholder="예: CT 촬영, 상담 등"
+                                    value={newItemLocation} // Using this for NAME now as per user request for arbitrary items
+                                    onChange={e => setNewItemLocation(e.target.value)}
+                                    // Handle Enter key
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newItemLocation) {
+                                            handleAddStep({ name: newItemLocation, location: '안내 데스크 문의', category: 'NOTICE' });
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={() => newItemLocation && handleAddStep({ name: newItemLocation, location: '안내 데스크 문의', category: 'NOTICE' })}
+                                    className="bg-indigo-600 text-white px-4 rounded-xl font-bold shadow-md active:scale-95 transition-all"
+                                >
+                                    추가
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-2 ml-1 text-center">*원하는 항목을 직접 입력하여 추가할 수 있습니다.</p>
                         </div>
-                        <div className="grid grid-cols-1 gap-2">
+
+                        {/* Presets Grid - LARGER */}
+                        <div className="grid grid-cols-2 gap-3">
                             {STEP_TEMPLATES.map(t => (
                                 <button
                                     key={t.name}
                                     onClick={() => handleAddStep(t)}
-                                    className="p-3.5 rounded-2xl border-2 border-slate-100 bg-white hover:border-indigo-500 hover:bg-indigo-50 group transition-all text-left flex items-center justify-between"
+                                    className="p-4 rounded-2xl border-2 border-slate-100 bg-white hover:border-indigo-500 hover:bg-indigo-50 group transition-all text-left flex flex-col justify-between h-24 shadow-sm hover:shadow-md active:scale-95"
                                 >
-                                    <div>
-                                        <div className="font-black text-sm text-slate-700 group-hover:text-indigo-700">{t.name}</div>
-                                        <div className="text-[10px] text-slate-400 font-bold">{t.location}</div>
+                                    <div className="font-black text-sm text-slate-700 group-hover:text-indigo-700 break-keep leading-tight">{t.name}</div>
+                                    <div className="flex justify-between items-end w-full">
+                                        <div className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded-lg group-hover:bg-white">{t.location}</div>
+                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-200 group-hover:text-indigo-700 transition-colors text-xs font-bold">+</div>
                                     </div>
-                                    <span className="text-xl opacity-0 group-hover:opacity-100 transition-opacity">+</span>
                                 </button>
                             ))}
                         </div>

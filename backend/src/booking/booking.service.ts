@@ -320,6 +320,16 @@ export class BookingService {
                         status: 'OPEN' // Always reopen if cancelled
                     }
                 });
+
+                // Cleanup Visit Steps if cancelled (USER REQUEST: 접수도 함께 취소되어야 합니다)
+                const todayStart = startOfDay(new Date());
+                const todayEnd = endOfDay(new Date());
+                await tx.visitStep.deleteMany({
+                    where: {
+                        patientId: appt.patientId,
+                        createdAt: { gte: todayStart, lte: todayEnd }
+                    }
+                });
             }
 
             if (status === 'CHECKED_IN') {
