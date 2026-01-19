@@ -188,47 +188,48 @@ export class HospitalService {
         const results = [];
         for (const s of schedules) {
             try {
+                const dayOfWeek = Number(s.dayOfWeek);
                 const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
                 const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
 
-                // Explicitly use null for doctorId when updating department-level schedule
-                const doctorId = null;
-
-                console.log(`[HospitalService] Processing Day ${s.dayOfWeek}: Holiday=${s.isHoliday}, Duration=${slotDuration}, Cap=${capacityPerSlot}`);
-
-                const rule = await this.prisma.scheduleRule.upsert({
+                // 1. Manually find existing rule to avoid unique constraint mismatch with NULLs
+                const existing = await this.prisma.scheduleRule.findFirst({
                     where: {
-                        deptDoctorDayIndex: {
-                            departmentId,
-                            doctorId: null,
-                            dayOfWeek: Number(s.dayOfWeek)
-                        }
-                    } as any,
-                    update: {
-                        startTime: s.startTime || '09:00',
-                        endTime: s.endTime || '18:00',
-                        breakStart: s.breakStart || null,
-                        breakEnd: s.breakEnd || null,
-                        isHoliday: Boolean(s.isHoliday),
-                        slotDuration: slotDuration,
-                        capacityPerSlot: capacityPerSlot
-                    },
-                    create: {
                         departmentId,
                         doctorId: null,
-                        dayOfWeek: Number(s.dayOfWeek),
-                        startTime: s.startTime || '09:00',
-                        endTime: s.endTime || '18:00',
-                        breakStart: s.breakStart || null,
-                        breakEnd: s.breakEnd || null,
-                        isHoliday: Boolean(s.isHoliday),
-                        slotDuration: slotDuration,
-                        capacityPerSlot: capacityPerSlot
+                        dayOfWeek
                     }
                 });
+
+                const data = {
+                    startTime: s.startTime || '09:00',
+                    endTime: s.endTime || '18:00',
+                    breakStart: s.breakStart || null,
+                    breakEnd: s.breakEnd || null,
+                    isHoliday: Boolean(s.isHoliday),
+                    slotDuration: slotDuration,
+                    capacityPerSlot: capacityPerSlot
+                };
+
+                let rule;
+                if (existing) {
+                    rule = await this.prisma.scheduleRule.update({
+                        where: { id: existing.id },
+                        data
+                    });
+                } else {
+                    rule = await this.prisma.scheduleRule.create({
+                        data: {
+                            ...data,
+                            departmentId,
+                            doctorId: null,
+                            dayOfWeek
+                        }
+                    });
+                }
                 results.push(rule);
             } catch (error) {
-                console.error(`[HospitalService] Failed to update schedule for day ${s.dayOfWeek}:`, error);
+                console.error(`[HospitalService] Failed to update department schedule for day ${s.dayOfWeek}:`, error);
                 throw error;
             }
         }
@@ -289,44 +290,50 @@ export class HospitalService {
             throw new Error('Doctor not found');
         }
 
-        console.log(`[HospitalService] Updating doctor schedules for Doctor: ${doctorId}, Count: ${schedules.length}`);
+        console.log(`[HospitalService] Updating doctor schedules for Doctor: ${doctorId}`);
         const results = [];
 
         for (const s of schedules) {
             try {
+                const dayOfWeek = Number(s.dayOfWeek);
                 const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
                 const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
 
-                const rule = await this.prisma.scheduleRule.upsert({
+                // 2. Manually find existing doctor rule
+                const existing = await this.prisma.scheduleRule.findFirst({
                     where: {
-                        deptDoctorDayIndex: {
-                            departmentId: doctor.departmentId,
-                            doctorId: doctorId,
-                            dayOfWeek: Number(s.dayOfWeek)
-                        }
-                    } as any,
-                    update: {
-                        startTime: s.startTime || '09:00',
-                        endTime: s.endTime || '18:00',
-                        breakStart: s.breakStart || null,
-                        breakEnd: s.breakEnd || null,
-                        isHoliday: Boolean(s.isHoliday),
-                        slotDuration: slotDuration,
-                        capacityPerSlot: capacityPerSlot
-                    },
-                    create: {
                         departmentId: doctor.departmentId,
                         doctorId: doctorId,
-                        dayOfWeek: Number(s.dayOfWeek),
-                        startTime: s.startTime || '09:00',
-                        endTime: s.endTime || '18:00',
-                        breakStart: s.breakStart || null,
-                        breakEnd: s.breakEnd || null,
-                        isHoliday: Boolean(s.isHoliday),
-                        slotDuration: slotDuration,
-                        capacityPerSlot: capacityPerSlot
+                        dayOfWeek
                     }
                 });
+
+                const data = {
+                    startTime: s.startTime || '09:00',
+                    endTime: s.endTime || '18:00',
+                    breakStart: s.breakStart || null,
+                    breakEnd: s.breakEnd || null,
+                    isHoliday: Boolean(s.isHoliday),
+                    slotDuration: slotDuration,
+                    capacityPerSlot: capacityPerSlot
+                };
+
+                let rule;
+                if (existing) {
+                    rule = await this.prisma.scheduleRule.update({
+                        where: { id: existing.id },
+                        data
+                    });
+                } else {
+                    rule = await this.prisma.scheduleRule.create({
+                        data: {
+                            ...data,
+                            departmentId: doctor.departmentId,
+                            doctorId: doctorId,
+                            dayOfWeek
+                        }
+                    });
+                }
                 results.push(rule);
             } catch (err) {
                 console.error(`[HospitalService] Error processing doctor schedule day ${s.dayOfWeek}:`, err);
