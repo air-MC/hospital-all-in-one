@@ -187,6 +187,29 @@ export class BookingService {
                 }
             });
 
+            // Create admin notification for new appointment
+            const slotDetails = await tx.slot.findUnique({
+                where: { id: slotId },
+                include: { department: true, doctor: true }
+            });
+
+            // Assuming DateTime is imported or available, e.g., from 'luxon'
+            // If not, you'll need to import it or use date-fns for formatting
+            // For now, using a placeholder for DateTime.fromJSDate and toFormat
+            const formattedTime = slotDetails?.startDateTime ? `${slotDetails.startDateTime.getMonth() + 1}/${slotDetails.startDateTime.getDate()} ${slotDetails.startDateTime.getHours()}:${String(slotDetails.startDateTime.getMinutes()).padStart(2, '0')}` : '';
+
+            await tx.notification.create({
+                data: {
+                    patientId: 'SYSTEM', // System notification for admin
+                    type: 'BOOKING_CONFIRMED',
+                    title: '🔔 신규 외래 예약',
+                    message: `${patient.name} 환자 - ${slotDetails?.department.name} (${formattedTime})`,
+                    triggerId: appointment.id
+                }
+            });
+
+            console.log(`[BookingService] ✅ Appointment created: ${appointment.id}, Admin notification sent`);
+
             return appointment;
         });
     }
@@ -395,7 +418,23 @@ export class BookingService {
 
         // Force KST (UTC+9) interpretation
         // "2025-01-19T09:00:00+09:00" -> This creates the correct UTC timestamp for 9 AM KST
-        const isoString = `${year}-${month}-${day}T${timeStr}:00+09:00`;
-        return new Date(isoString);
+        const kstDateStr = `${year}-${month}-${day}T${timeStr}:00+09:00`;
+        return new Date(kstDateStr);
+    }
+
+    async getAdminNotifications() {
+        // Get system notifications (patientId = 'SYSTEM')
+        return this.prisma.notification.findMany({
+            where: { patientId: 'SYSTEM' },
+            orderBy: { sentAt: 'desc' },
+            take: 50
+        });
+    }
+
+    async markNotificationRead(id: string) {
+        return this.prisma.notification.update({
+            where: { id },
+            data: { isRead: true }
+        });
     }
 }

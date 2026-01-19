@@ -113,4 +113,20 @@ export class BookingController {
         }
         return this.bookingService.walkInRegistration(dto.patientId, dto.departmentId, dto.doctorId, idempotencyKey);
     }
+
+    /**
+     * Admin: Get system notifications
+     */
+    @Get('notifications/admin')
+    async getAdminNotifications() {
+        return this.bookingService.getAdminNotifications();
+    }
+
+    /**
+     * Admin: Mark notification as read
+     */
+    @Patch('notifications/:id/read')
+    async markNotificationRead(@Param('id') id: string) {
+        return this.bookingService.markNotificationRead(id);
+    }
 }

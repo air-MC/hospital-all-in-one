@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard'
 import { AuditLogViewer } from './components/AuditLogViewer'
 import { SettingsManager } from './components/SettingsManager'
 import { LoginScreen } from './components/LoginScreen'
+import { AdminNotifications } from './components/AdminNotifications'
 import { getActiveSurgeries } from './hooks/useCareManager'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
@@ -332,6 +333,7 @@ function App() {
             <span className="text-sm text-slate-500 bg-slate-50 py-1 px-3 rounded-full border">
               {new Date().toLocaleDateString()}
             </span>
+            <AdminNotifications />
             <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs">A</div>
           </div>
         </header>
