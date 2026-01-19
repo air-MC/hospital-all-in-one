@@ -66,6 +66,7 @@ model Doctor {
   appointments Appointment[]
   surgeryCases SurgeryCase[]
   slots        Slot[]
+  scheduleRules ScheduleRule[] // Doctor-specific schedules
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -98,10 +99,17 @@ enum Role {
 // 2. Scheduling & Slots (The Heart)
 // --------------------------------------
 
+
 model ScheduleRule {
   id           String      @id @default(uuid())
   departmentId String
   department   Department  @relation(fields: [departmentId], references: [id])
+  
+  // Optional: If set, this schedule applies to a specific doctor
+  // If null, this is the default schedule for the entire department
+  doctorId     String?
+  doctor       Doctor?     @relation(fields: [doctorId], references: [id])
+  
   dayOfWeek    Int         
   startTime    String      
   endTime      String      
@@ -111,8 +119,13 @@ model ScheduleRule {
   slotDuration Int         @default(10)
   capacityPerSlot Int      @default(3)
 
-  @@unique([departmentId, dayOfWeek], name: "departmentDayIndex")
+  // Updated unique constraint: department + doctor + day
+  // This allows: 
+  // - One default schedule per department per day (doctorId = null)
+  // - One custom schedule per doctor per day (doctorId = specific doctor)
+  @@unique([departmentId, doctorId, dayOfWeek], name: "deptDoctorDayIndex")
 }
+
 
 model Slot {
   id           String        @id @default(uuid())
