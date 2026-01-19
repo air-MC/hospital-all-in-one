@@ -174,8 +174,13 @@ export class BookingService {
             }
 
             // [FIX] Get Patient's Hospital ID
+            console.log(`[BookingService] Fetching patient details for ID: ${patientId}`);
             const patient = await tx.patient.findUnique({ where: { id: patientId } });
-            if (!patient) throw new NotFoundException('Patient not found');
+            if (!patient) {
+                console.error(`[BookingService] ❌ Patient not found: ${patientId}`);
+                throw new NotFoundException('Patient not found');
+            }
+            console.log(`[BookingService] Patient found: ${patient.name}, Hospital: ${patient.hospitalId}`);
 
 
             if (updatedSlot.bookedCount === updatedSlot.capacity) {
@@ -183,6 +188,7 @@ export class BookingService {
                     where: { id: slotId },
                     data: { status: 'FULL' }
                 });
+                console.log(`[BookingService] Slot marked as FULL`);
             }
 
             console.log(`[BookingService] Creating appointment record...`);
@@ -193,49 +199,55 @@ export class BookingService {
                     status: 'BOOKED',
                     idempotencyKey,
                     hospitalId: patient.hospitalId,
-                    doctorsId: slot.doctorId // [FIX] Copy doctor from slot
+                    doctorsId: slot.doctorId || null
                 }
             });
-            console.log(`[BookingService] Appointment record created: ${appointment.id}`);
+            console.log(`[BookingService] ✅ Appointment record created: ${appointment.id}`);
 
-            await tx.auditLog.create({
-                data: {
-                    entityTable: 'Appointment',
-                    entityId: appointment.id,
-                    action: 'CREATE',
-                    newValue: JSON.stringify(appointment),
-                    hospitalId: patient.hospitalId // [FIX] Injected
-                }
-            });
+            try {
+                console.log(`[BookingService] Creating audit log...`);
+                await tx.auditLog.create({
+                    data: {
+                        entityTable: 'Appointment',
+                        entityId: appointment.id,
+                        action: 'CREATE',
+                        newValue: `Appointment created for patient ${patient.name} in slot ${slotId}`,
+                        hospitalId: patient.hospitalId
+                    }
+                });
+                console.log(`[BookingService] Audit log created.`);
+            } catch (auditError) {
+                console.error(`[BookingService] ⚠️ Audit log creation failed:`, auditError);
+            }
 
             // Create admin notification for new appointment
             try {
-                console.log(`[BookingService] Creating admin notification...`);
+                console.log(`[BookingService] Preparing admin notification...`);
                 const slotWithDetails = await tx.slot.findUnique({
                     where: { id: slotId },
                     include: { department: true }
                 });
 
-                const formattedTime = slotWithDetails?.startDateTime ?
-                    `${slotWithDetails.startDateTime.getMonth() + 1}/${slotWithDetails.startDateTime.getDate()} ${slotWithDetails.startDateTime.getHours()}:${String(slotWithDetails.startDateTime.getMinutes()).padStart(2, '0')}` : '';
+                if (slotWithDetails && slotWithDetails.department) {
+                    const st = slotWithDetails.startDateTime;
+                    const formattedTime = `${st.getMonth() + 1}/${st.getDate()} ${st.getHours()}:${String(st.getMinutes()).padStart(2, '0')}`;
 
-                await tx.notification.create({
-                    data: {
-                        patientId: 'SYSTEM', // Ensure this ID exists in seed!
-                        type: 'BOOKING_CONFIRMED',
-                        title: '🔔 신규 외래 예약',
-                        message: `${patient.name} 환자 - ${slotWithDetails?.department.name} (${formattedTime})`,
-                        triggerId: appointment.id
-                    }
-                });
-                console.log(`[BookingService] Admin notification created.`);
+                    await tx.notification.create({
+                        data: {
+                            patientId: 'SYSTEM',
+                            type: 'BOOKING_CONFIRMED',
+                            title: '🔔 신규 외래 예약',
+                            message: `${patient.name} 환자 - ${slotWithDetails.department.name} (${formattedTime})`,
+                            triggerId: appointment.id
+                        }
+                    });
+                    console.log(`[BookingService] Admin notification created.`);
+                }
             } catch (notiError) {
-                console.error(`[BookingService] ⚠️ Notification creation failed (non-fatal):`, notiError);
-                // We DON'T throw here so the transaction doesn't roll back
+                console.error(`[BookingService] ⚠️ Notification creation failed:`, notiError);
             }
 
-            console.log(`[BookingService] ✅ Appointment created: ${appointment.id}, Admin notification sent`);
-
+            console.log(`[BookingService] 🏁 Transaction success for appointment: ${appointment.id}`);
             return appointment;
         });
     }
