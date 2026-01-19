@@ -10,8 +10,9 @@ async function bootstrap() {
       origin: [
         'http://localhost:5173',
         'http://localhost:3000',
-        'https://hospital-admin-tau.vercel.app', // Explicit Vercel Domain
-        /^https:\/\/.*\.vercel\.app$/ // Allow Vercel preview deployments
+        'https://hospital-admin-tau.vercel.app',
+        'https://air-MC.github.io', // Add GitHub Pages
+        /^https:\/\/.*\.vercel\.app$/
       ],
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,
