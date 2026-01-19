@@ -95,8 +95,8 @@ export const SuperAdminPage = () => {
             {/* Hospital List */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-black text-slate-800 flex items-center gap-2">
-                        <span>🏢</span> 등록된 병원 목록 <span className="text-[10px] text-slate-400 font-normal ml-2">v1.0.1 (Button Fix)</span>
+                    <h3 className="font-black text-red-600 flex items-center gap-2">
+                        <span>🏢</span> 등록된 병원 목록 <span className="text-[10px] text-slate-400 font-normal ml-2">v1.0.2 (DEPLOY CHECK)</span>
                     </h3>
                 </div>
                 <div className="divide-y divide-slate-100">
