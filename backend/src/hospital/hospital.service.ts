@@ -178,7 +178,10 @@ export class HospitalService {
 
     async getDepartmentSchedules(departmentId: string) {
         return this.prisma.scheduleRule.findMany({
-            where: { departmentId },
+            where: {
+                departmentId,
+                doctorId: null
+            },
             orderBy: { dayOfWeek: 'asc' }
         });
     }
