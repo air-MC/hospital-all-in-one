@@ -1,17 +1,41 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { getApiUrl } from '../utils/api';
 
 export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // MVP Level: Simple hardcoded password for demonstration
-        // In a real app, this would verify against the backend Auth API
-        if (password === 'admin1234' || password === '1234') {
+        setError('');
+        setIsLoading(true);
+
+        try {
+            const tempApiUrl = getApiUrl();
+            const response = await axios.post(`${tempApiUrl}/auth/login`, {
+                email,
+                password
+            });
+
+            const { access_token, user } = response.data;
+
+            // Store securely
+            localStorage.setItem('access_token', access_token);
+            localStorage.setItem('user_info', JSON.stringify(user));
+
+            // Setup default headers for future requests
+            axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+
             onLogin();
-        } else {
-            setError('비밀번호가 올바르지 않습니다.');
+        } catch (err: any) {
+            console.error('Login failed', err);
+            const msg = err.response?.data?.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.';
+            setError(msg);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -21,20 +45,30 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
                 <div className="bg-indigo-600 p-8 text-center">
                     <div className="text-4xl mb-2">🏥</div>
                     <h1 className="text-2xl font-bold text-white">병원 통합 관리자 시스템</h1>
-                    <p className="text-indigo-200 text-sm mt-1">Hospital All-in-One Admin</p>
+                    <p className="text-indigo-200 text-sm mt-1">secure access</p>
                 </div>
 
                 <div className="p-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">관리자 비밀번호</label>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">이메일 (ID)</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="system@hospital.com"
+                                className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                autoFocus
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">비밀번호</label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="비밀번호를 입력하세요 (1234)"
+                                placeholder="비밀번호 입력"
                                 className="w-full border border-slate-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono"
-                                autoFocus
                             />
                         </div>
 
@@ -46,13 +80,19 @@ export const LoginScreen = ({ onLogin }: { onLogin: () => void }) => {
 
                         <button
                             type="submit"
-                            className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all active:scale-95 shadow-lg"
+                            disabled={isLoading}
+                            className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                            로그인
+                            {isLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    로그인 중...
+                                </>
+                            ) : '로그인'}
                         </button>
 
                         <div className="text-center text-xs text-slate-400 mt-4">
-                            보안을 위해 사용 후 반드시 로그아웃 해주세요.
+                            초기 비밀번호 분실 시 시스템 관리자에게 문의하세요.
                         </div>
                     </form>
                 </div>
