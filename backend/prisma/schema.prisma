@@ -18,21 +18,28 @@ datasource db {
 // --------------------------------------
 
 model Hospital {
-  id          String       @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
+  status      HospitalStatus @default(ACTIVE) // Super Admin Control
   departments Department[]
-  staff       Staff[]
-  
-  // Multi-Tenancy Relations
-  patients      Patient[]
-  appointments  Appointment[]
-  surgeryCases  SurgeryCase[]
-  carePlans     CarePlan[]
-  surgeryTypes  SurgeryType[]
-  auditLogs     AuditLog[]
+  users       User[]         // Renamed from Staff
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  // Multi-Tenancy Relations
+  patients     Patient[]
+  appointments Appointment[]
+  surgeryCases SurgeryCase[]
+  carePlans    CarePlan[]
+  surgeryTypes SurgeryType[]
+  auditLogs    AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum HospitalStatus {
+  ACTIVE
+  SUSPENDED // Non-payment or policy violation
+  CLOSED
 }
 
 model Department {
@@ -48,32 +55,37 @@ model Department {
 }
 
 model Doctor {
-  id           String         @id @default(uuid())
+  id           String        @id @default(uuid())
   departmentId String
-  department   Department     @relation(fields: [departmentId], references: [id])
+  department   Department    @relation(fields: [departmentId], references: [id])
   name         String
   appointments Appointment[]
   surgeryCases SurgeryCase[]
   slots        Slot[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
-model Staff {
-  id          String   @id @default(uuid())
-  hospitalId  String
-  hospital    Hospital @relation(fields: [hospitalId], references: [id])
-  username    String   @unique
-  password    String   
-  role        Role     @default(ADMIN)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  auditLogs   AuditLog[] // Track staff actions
+// Renamed from 'Staff' to 'User' for clearer Auth context
+model User {
+  id         String   @id @default(uuid())
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+
+  email    String @unique // Login ID (e.g., admin@hospital-a.com)
+  password String // Hashed Password
+  name     String // Display Name (e.g., "Manager Kim")
+
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[] // Track user actions
 }
 
 enum Role {
-  ADMIN
+  SUPER_ADMIN // Platform Owner (Can manage Hospitals)
+  ADMIN // Hospital Admin
   NURSE
   DOCTOR
 }
@@ -366,8 +378,8 @@ model AuditLog {
   entityId    String   // The ID of the record changed
   action      String   // "CREATE", "UPDATE", "DELETE", "STATUS_CHANGE"
   
-  actorId     String?  // Staff ID or System
-  actor       Staff?   @relation(fields: [actorId], references: [id])
+  actorId     String?  // User ID or System
+  actor       User?    @relation(fields: [actorId], references: [id])
   
   hospitalId  String?
   hospital    Hospital? @relation(fields: [hospitalId], references: [id])

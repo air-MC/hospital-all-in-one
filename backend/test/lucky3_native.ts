@@ -23,18 +23,22 @@ async function seed() {
         });
     }
 
-    // Ensure 'SYSTEM' Staff exists for AuditLog
-    const systemStaff = await prisma.staff.findUnique({ where: { id: 'SYSTEM' } });
-    if (!systemStaff) {
-        // Need a valid hospitalId for staff
+    // 0. Ensure System User
+    let systemUser = await prisma.user.findFirst({ where: { email: 'system@hospital.com' } });
+    if (!systemUser) {
+        // Need a valid hospitalId for user
         const hospital = await prisma.hospital.findFirst();
-        await prisma.staff.create({
+        if (!hospital) {
+            throw new Error("No hospital found to associate system user with.");
+        }
+        systemUser = await prisma.user.create({
             data: {
                 id: 'SYSTEM',
-                username: 'system_admin',
-                password: 'hashed_password', // Dummy
-                hospitalId: hospital!.id,
-                role: 'ADMIN'
+                email: 'system@hospital.com',
+                password: 'hash',
+                name: 'System',
+                role: 'SUPER_ADMIN',
+                hospitalId: hospital.id
             }
         });
     }

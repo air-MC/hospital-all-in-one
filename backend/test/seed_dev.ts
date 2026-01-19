@@ -25,20 +25,22 @@ async function main() {
         });
     }
 
-    // 2. Staff (SYSTEM)
-    console.log('👨‍⚕️ Ensuring Staff...');
+    // 0. Ensure System User (for Audit Logs)
     const systemId = 'SYSTEM';
-    const staff = await prisma.staff.findUnique({ where: { id: systemId } });
-    if (!staff) {
-        await prisma.staff.create({
+    const systemUser = await prisma.user.findUnique({ where: { email: 'system@hospital.com' } });
+
+    if (!systemUser) {
+        await prisma.user.create({
             data: {
                 id: systemId,
-                username: 'system_admin',
-                password: 'hashed_password_123',
-                hospitalId: hospital.id,
-                role: 'ADMIN'
+                email: 'system@hospital.com',
+                password: 'hashed_password_here',
+                name: 'System Admin',
+                role: 'SUPER_ADMIN',
+                hospitalId: hospital.id // Link to main hospital
             }
         });
+        console.log('🤖 System User ensured.');
     }
 
     // 3. Patients
