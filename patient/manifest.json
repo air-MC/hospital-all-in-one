@@ -1,0 +1,37 @@
+{
+    "id": "/hospital-all-in-one/patient/",
+    "name": "Smart Hospital Patient App",
+    "short_name": "Smart Hospital",
+    "description": "Hospital patient portal for bookings and care plan management",
+    "start_url": "/hospital-all-in-one/patient/?utm_source=pwa",
+    "scope": "/hospital-all-in-one/patient/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0f172a",
+    "icons": [
+        {
+            "src": "icon-512.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
