@@ -1,8 +1,10 @@
+// Force rebuild: 2026-01-19 14:49 - PatientNo deployment
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
     console.log('💉 Safe Seeding Surgery Types & System Doctors (Production)...');
+    console.log('🔄 Deploy Version: 2026-01-19 v5 (PatientNo + Cancel)');
 
     // 1. Ensure a Hospital exists
     let hospital = await prisma.hospital.findFirst();
@@ -140,7 +142,8 @@ async function main() {
             phone: '010-1234-5678',
             birthDate: new Date('1980-01-01'),
             gender: 'M',
-            hospitalId: hospital.id
+            hospitalId: hospital.id,
+            patientNo: 'P-260119-DEMO'
         }
     });
     console.log('👤 Demo Patient ensured (010-1234-5678).');
