@@ -63,4 +63,9 @@ export class HospitalController {
     async updateDepartmentSchedule(@Param('id') id: string, @Body() body: any[]) {
         return this.hospitalService.updateDepartmentSchedule(id, body);
     }
+
+    @Post('patients/:id/update')
+    async updatePatient(@Param('id') id: string, @Body() data: { name?: string; phone?: string; birthDate?: string; gender?: string }) {
+        return this.hospitalService.updatePatient(id, data);
+    }
 }

@@ -117,3 +117,8 @@ export const walkInRegistration = async (patientId: string, departmentId: string
         { headers: { 'Idempotency-Key': idempotencyKey } }
     );
 };
+
+// --- Patient Management ---
+export const updatePatient = async (id: string, data: { name?: string; phone?: string; birthDate?: string; gender?: string }) => {
+    return axios.post(`${API_URL}/hospital/patients/${id}/update`, data);
+};

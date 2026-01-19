@@ -230,4 +230,28 @@ export class HospitalService {
         }
         return results;
     }
+
+    async updatePatient(id: string, data: { name?: string; phone?: string; birthDate?: string; gender?: string }) {
+        const updateData: any = {};
+
+        if (data.name) updateData.name = data.name;
+        if (data.phone) {
+            // Normalize phone number
+            updateData.phone = data.phone.replace(/[^0-9]/g, '');
+        }
+        if (data.birthDate) updateData.birthDate = new Date(data.birthDate);
+        if (data.gender) updateData.gender = data.gender;
+
+        console.log(`[HospitalService] Updating patient ${id}:`, updateData);
+
+        try {
+            return await this.prisma.patient.update({
+                where: { id },
+                data: updateData
+            });
+        } catch (error) {
+            console.error(`[HospitalService] Patient update failed:`, error);
+            throw error;
+        }
+    }
 }
