@@ -12,40 +12,58 @@ export const ScheduleSettings = () => {
     const [schedules, setSchedules] = useState<any[]>([]);
 
     useEffect(() => {
-        if (!departments || departments.length === 0) return;
-        if (!selectedDeptId) setSelectedDeptId(departments[0].id);
+        if (departments && departments.length > 0 && !selectedDeptId) {
+            setSelectedDeptId(departments[0].id);
+        }
     }, [departments]);
 
     useEffect(() => {
         if (!selectedDeptId) return;
-        const fetchSchedules = async () => {
+
+        const loadData = async () => {
             try {
+                // Initialize defaults first
+                const defaults = Array.from({ length: 7 }, (_, i) => ({
+                    dayOfWeek: i,
+                    startTime: '09:00',
+                    endTime: '18:00',
+                    breakStart: '12:00',
+                    breakEnd: '13:00',
+                    slotDuration: 30,
+                    capacityPerSlot: 3,
+                    isHoliday: false // Default to working every day to avoid confusion
+                }));
+
                 const data = await getDepartmentSchedules(selectedDeptId);
-                // Merge with defaults if missing
-                const merged = [];
-                for (let i = 0; i <= 6; i++) {
-                    const existing = data.find((d: any) => d.dayOfWeek === i);
-                    if (existing) {
-                        merged.push(existing);
-                    } else {
-                        merged.push({
-                            dayOfWeek: i,
-                            startTime: '09:00',
-                            endTime: '18:00',
-                            breakStart: '12:00',
-                            breakEnd: '13:00',
-                            slotDuration: 30,
-                            capacityPerSlot: 3,
-                            isHoliday: i === 0 || i === 6 // Default weekend off
-                        });
-                    }
+
+                // Merge server data into defaults
+                if (data && Array.isArray(data)) {
+                    data.forEach((serverRule: any) => {
+                        const idx = serverRule.dayOfWeek;
+                        if (defaults[idx]) {
+                            defaults[idx] = { ...defaults[idx], ...serverRule };
+                        }
+                    });
                 }
-                setSchedules(merged);
+
+                setSchedules(defaults);
             } catch (e) {
-                console.error(e);
+                console.error("Failed to load schedules", e);
+                // Even on error, show defaults
+                setSchedules(Array.from({ length: 7 }, (_, i) => ({
+                    dayOfWeek: i,
+                    startTime: '09:00',
+                    endTime: '18:00',
+                    breakStart: '12:00',
+                    breakEnd: '13:00',
+                    slotDuration: 30, // Default 30 min
+                    capacityPerSlot: 3,
+                    isHoliday: false
+                })));
             }
         };
-        fetchSchedules();
+
+        loadData();
     }, [selectedDeptId]);
 
     const handleUpdate = (index: number, field: string, value: any) => {
