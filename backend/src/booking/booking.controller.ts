@@ -94,4 +94,23 @@ export class BookingController {
         }
         return this.bookingService.bookSlotAtomic(dto.slotId, dto.patientId, idempotencyKey);
     }
+
+    /**
+     * Admin: Walk-in Registration (현장 접수)
+     * Finds the nearest available slot and books it immediately
+     */
+    @Post('walk-in')
+    async walkInRegistration(
+        @Body() dto: { patientId: string; departmentId: string; doctorId?: string },
+        @Headers('idempotency-key') idempotencyKey: string,
+    ) {
+        console.log(`[BookingController] Walk-in registration for Patient: ${dto.patientId}, Dept: ${dto.departmentId}`);
+        if (!idempotencyKey) {
+            throw new BadRequestException('Idempotency-Key header is required');
+        }
+        if (!dto.patientId || !dto.departmentId) {
+            throw new BadRequestException('patientId and departmentId are required');
+        }
+        return this.bookingService.walkInRegistration(dto.patientId, dto.departmentId, dto.doctorId, idempotencyKey);
+    }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { SurgeryManager } from './components/SurgeryManager'
 import { PatientManager } from './components/PatientManager'
+import { WalkInManager } from './components/WalkInManager'
 import { CarePlanEditor } from './components/CarePlanEditor'
 import { SlotManager } from './components/SlotManager'
 import { VisitGuideManager } from './components/VisitGuideManager'
@@ -27,7 +28,7 @@ const ROOM_DEFS = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'PATIENT' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS' | 'SETTINGS'>('DASHBOARD');
+  const [activeMenu, setActiveMenu] = useState<'DASHBOARD' | 'PATIENT' | 'WALKIN' | 'SURGERY' | 'CARE' | 'SLOTS' | 'GUIDE' | 'LOGS' | 'SETTINGS'>('DASHBOARD');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedPatientSurgery, setSelectedPatientSurgery] = useState<any>(null);
@@ -148,6 +149,15 @@ function App() {
                   activeMenu === 'PATIENT' ? "bg-indigo-600 text-white shadow-md font-bold" : "text-slate-400 hover:bg-slate-800 hover:text-white")}
               >
                 <span>👥</span> 환자 명부 관리
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => setActiveMenu('WALKIN')}
+                className={clsx("w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all",
+                  activeMenu === 'WALKIN' ? "bg-teal-600 text-white shadow-md font-bold" : "text-slate-400 hover:bg-slate-800 hover:text-white")}
+              >
+                <span>🚶</span> 현장 접수 (Walk-in)
               </button>
             </li>
             <div className="h-4"></div>
@@ -310,12 +320,13 @@ function App() {
           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             {activeMenu === 'DASHBOARD' ? '📊 운영 현황 대시보드' :
               activeMenu === 'PATIENT' ? '👥 환자 명부 관리' :
-                activeMenu === 'SURGERY' ? '🩺 수술 등록 및 스케줄 관리' :
-                  activeMenu === 'SLOTS' ? '📅 외래 진료 예약 현황' :
-                    activeMenu === 'GUIDE' ? '🧭 외래 경로 관리' :
-                      activeMenu === 'LOGS' ? '🛡️ 보안 감사 로그' :
-                        activeMenu === 'SETTINGS' ? '⚙️ 병원 환경 설정' :
-                          '📋 환자별 케어 플랜 상세'}
+                activeMenu === 'WALKIN' ? '🚶 현장 접수 (Walk-in)' :
+                  activeMenu === 'SURGERY' ? '🩺 수술 등록 및 스케줄 관리' :
+                    activeMenu === 'SLOTS' ? '📅 외래 진료 예약 현황' :
+                      activeMenu === 'GUIDE' ? '🧭 외래 경로 관리' :
+                        activeMenu === 'LOGS' ? '🛡️ 보안 감사 로그' :
+                          activeMenu === 'SETTINGS' ? '⚙️ 병원 환경 설정' :
+                            '📋 환자별 케어 플랜 상세'}
           </h2>
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500 bg-slate-50 py-1 px-3 rounded-full border">
@@ -335,6 +346,12 @@ function App() {
           {activeMenu === 'PATIENT' && (
             <div className="max-w-6xl mx-auto">
               <PatientManager />
+            </div>
+          )}
+
+          {activeMenu === 'WALKIN' && (
+            <div className="max-w-4xl mx-auto">
+              <WalkInManager />
             </div>
           )}
 

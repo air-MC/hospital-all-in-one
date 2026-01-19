@@ -108,3 +108,12 @@ export const deleteDoctor = async (id: string) => {
 export const updateDoctor = async (id: string, data: { name: string; departmentId?: string }) => {
     return axios.patch(`${API_URL}/care/doctors/${id}`, data);
 };
+
+// --- Walk-in Registration ---
+export const walkInRegistration = async (patientId: string, departmentId: string, doctorId?: string) => {
+    const idempotencyKey = `walkin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return axios.post(`${API_URL}/booking/walk-in`,
+        { patientId, departmentId, doctorId },
+        { headers: { 'Idempotency-Key': idempotencyKey } }
+    );
+};

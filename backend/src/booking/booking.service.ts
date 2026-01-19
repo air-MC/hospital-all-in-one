@@ -336,6 +336,49 @@ export class BookingService {
         }
     }
 
+    /**
+     * Walk-in Registration: Find nearest available slot and book it
+     */
+    async walkInRegistration(patientId: string, departmentId: string, doctorId: string | undefined, idempotencyKey: string) {
+        console.log(`[BookingService] Walk-in registration - Patient: ${patientId}, Dept: ${departmentId}, Doctor: ${doctorId || 'any'}`);
+
+        // Get current time in KST
+        const now = new Date();
+        const kstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+
+        // Find available slots starting from now
+        const whereClause: any = {
+            departmentId,
+            status: 'OPEN',
+            startDateTime: {
+                gte: kstNow  // Only future slots
+            }
+        };
+
+        if (doctorId) {
+            whereClause.doctorId = doctorId;
+        }
+
+        // Find the nearest available slot
+        const availableSlot = await this.prisma.slot.findFirst({
+            where: whereClause,
+            orderBy: { startDateTime: 'asc' },  // Nearest first
+            include: {
+                department: true,
+                doctor: true
+            }
+        });
+
+        if (!availableSlot) {
+            throw new Error('No available slots found for walk-in registration. Please generate slots or try a different department.');
+        }
+
+        console.log(`[BookingService] Found available slot: ${availableSlot.id} at ${availableSlot.startDateTime}`);
+
+        // Book the slot using existing atomic booking logic
+        return this.bookSlotAtomic(availableSlot.id, patientId, idempotencyKey);
+    }
+
     async getAuditLogs(limit: number = 50, offset: number = 0) {
         return this.prisma.auditLog.findMany({
             take: Number(limit),
