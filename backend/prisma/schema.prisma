@@ -150,6 +150,7 @@ enum SlotStatus {
 
 model Patient {
   id           String        @id @default(uuid())
+  patientNo    String        @unique // e.g. 20240119-0001
   name         String
   phone        String        @unique 
   birthDate    DateTime

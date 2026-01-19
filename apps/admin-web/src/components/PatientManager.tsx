@@ -19,18 +19,20 @@ export const PatientManager = () => {
 
     // Handle Search
     useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (searchTerm.length >= 2) {
-                try {
-                    const results = await searchPatients(searchTerm);
-                    setSearchResults(results);
-                } catch (e) {
-                    console.error("Search failed", e);
-                }
-            } else {
-                setSearchResults([]);
+        const fetchPatients = async () => {
+            try {
+                // If search term is short, we fetch "recent patients" by sending empty string
+                const query = searchTerm.length >= 1 ? searchTerm : '';
+                // Only skip if user is typing and length is 1 (too ambiguous?) - actually good to just debounce
+                // Let's just fetch.
+                const results = await searchPatients(query);
+                setSearchResults(results);
+            } catch (e) {
+                console.error("Search failed", e);
             }
-        }, 300);
+        };
+
+        const timer = setTimeout(fetchPatients, 300);
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
@@ -40,7 +42,7 @@ export const PatientManager = () => {
         try {
             await registerPatient(formData);
             alert('✅ 환자 등록이 완료되었습니다.');
-            setSearchTerm(formData.name);
+            setSearchResults(await searchPatients('')); // Refresh list
             setIsRegistering(false);
             setFormData({ name: '', phone: '', birthDate: '', gender: 'M' });
         } catch (error: any) {
@@ -75,6 +77,9 @@ export const PatientManager = () => {
                             <h4 className="font-bold text-indigo-600 mb-4 flex items-center gap-2">
                                 <span className="bg-indigo-100 p-1.5 rounded-lg">📝</span> 신규 환자 정보 입력
                             </h4>
+                            <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700 mb-4 border border-blue-100">
+                                💡 환자 등록번호(Patient No)는 등록 시 <strong>자동으로 부여</strong>됩니다.
+                            </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">이름</label>
                                 <input
@@ -134,64 +139,76 @@ export const PatientManager = () => {
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
                                 <input
                                     type="text"
-                                    placeholder="환자 성함 또는 연락처로 검색하세요..."
+                                    placeholder="이름, 연락처, 또는 등록번호(예: P-2401...)로 검색하세요"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-lg shadow-inner"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {searchResults.length === 0 && searchTerm.length >= 2 ? (
+                            <div className="flex justify-between items-center text-sm font-bold text-slate-500 px-1">
+                                <span>{searchTerm ? `검색 결과 (${searchResults.length})` : '최근 등록 환자'}</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
+                                {searchResults.length === 0 ? (
                                     <div className="col-span-2 py-20 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300">
                                         <p className="text-slate-400">검색 결과가 없습니다.</p>
-                                        <button
-                                            onClick={() => {
-                                                setIsRegistering(true);
-                                                setFormData({ ...formData, name: searchTerm });
-                                            }}
-                                            className="mt-4 text-indigo-600 font-bold hover:underline"
-                                        >
-                                            '{searchTerm}' 환자로 신규 등록하기 →
-                                        </button>
+                                        {searchTerm && (
+                                            <button
+                                                onClick={() => {
+                                                    setIsRegistering(true);
+                                                    setFormData({ ...formData, name: searchTerm });
+                                                }}
+                                                className="mt-4 text-indigo-600 font-bold hover:underline"
+                                            >
+                                                '{searchTerm}' 환자로 신규 등록하기 →
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
                                     searchResults.map(p => (
-                                        <div key={p.id} className="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group">
+                                        <div key={p.id} className="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group relative">
+                                            {p.patientNo && (
+                                                <div className="absolute top-4 right-4 text-[10px] font-mono font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
+                                                    {p.patientNo}
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                                     {p.name[0]}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <div className="flex justify-between items-start">
+                                                    <div className="flex justify-start items-center gap-2">
                                                         <h4 className="font-bold text-slate-800 text-lg">{p.name}</h4>
                                                         <span className={clsx(
                                                             "text-[10px] px-2 py-1 rounded font-bold uppercase",
                                                             p.gender === 'M' ? "bg-blue-50 text-blue-600" : "bg-rose-50 text-rose-600"
                                                         )}>
-                                                            {p.gender === 'M' ? 'Male' : 'Female'}
+                                                            {p.gender === 'M' ? 'M' : 'F'}
                                                         </span>
                                                     </div>
                                                     <div className="text-sm text-slate-500 font-medium">{p.phone}</div>
                                                     <div className="text-xs text-slate-400 mt-1">🎂 {DateTime.fromISO(p.birthDate).toFormat('yyyy-MM-dd')}</div>
                                                 </div>
                                             </div>
-                                            <div className="mt-4 pt-4 border-t border-slate-50 flex justify-end gap-2">
-                                                <button className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">상세보기</button>
-                                                <span className="text-slate-200">|</span>
-                                                <button className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">진료 기록</button>
+                                            <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                                                <div className="flex gap-2 text-xs">
+                                                    <span className="bg-slate-100 px-2 py-1 rounded text-slate-500">
+                                                        예약 {p._count?.appointments || 0}
+                                                    </span>
+                                                    <span className="bg-slate-100 px-2 py-1 rounded text-slate-500">
+                                                        수술 {p._count?.surgeryCases || 0}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">상세보기</button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
-
-                            {searchTerm.length < 2 && (
-                                <div className="py-20 text-center text-slate-300">
-                                    <div className="text-4xl mb-4">👥</div>
-                                    <p>검색어를 입력하여 환자 정보를 조회하세요.</p>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>

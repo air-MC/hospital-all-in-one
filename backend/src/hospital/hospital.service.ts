@@ -52,6 +52,8 @@ export class HospitalService {
             }
         }
 
+        const patientNo = await this.generatePatientNo();
+
         try {
             return await this.prisma.patient.create({
                 data: {
@@ -59,7 +61,8 @@ export class HospitalService {
                     phone: normalized,
                     birthDate: new Date(data.birthDate),
                     gender: data.gender,
-                    hospitalId: hospitalId
+                    hospitalId: hospitalId,
+                    patientNo: patientNo
                 }
             });
         } catch (error) {
@@ -68,14 +71,52 @@ export class HospitalService {
         }
     }
 
+    private async generatePatientNo(): Promise<string> {
+        // Format: P-YYMMDD-XXXX (e.g., P-260119-0001)
+        const date = new Date();
+        const yy = date.getFullYear().toString().slice(2);
+        const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dd = date.getDate().toString().padStart(2, '0');
+        const todayPrefix = `P-${yy}${mm}${dd}-`;
+
+        // Find last patient number for today
+        const lastPatient = await this.prisma.patient.findFirst({
+            where: {
+                patientNo: { startsWith: todayPrefix }
+            },
+            orderBy: { patientNo: 'desc' }
+        });
+
+        let nextSeq = 1;
+        if (lastPatient) {
+            const parts = lastPatient.patientNo.split('-');
+            if (parts.length === 3) {
+                const lastSeq = parseInt(parts[2]);
+                if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+            }
+        }
+
+        return `${todayPrefix}${nextSeq.toString().padStart(4, '0')}`;
+    }
+
     async searchPatients(query: string) {
+        if (!query || query.trim() === '') {
+            console.log(`[HospitalService] No query provided, returning recent patients.`);
+            return this.prisma.patient.findMany({
+                take: 50,
+                orderBy: { createdAt: 'desc' },
+                include: { _count: { select: { appointments: true, surgeryCases: true } } }
+            });
+        }
+
         const normalizedQuery = query.replace(/[^0-9]/g, '');
         console.log(`[HospitalService] Searching patients for query: ${query} (normalized: ${normalizedQuery})`);
         return this.prisma.patient.findMany({
             where: {
                 OR: [
                     { name: { contains: query, mode: 'insensitive' } },
-                    { phone: { contains: normalizedQuery && normalizedQuery.length > 0 ? normalizedQuery : query } }
+                    { phone: { contains: normalizedQuery && normalizedQuery.length > 0 ? normalizedQuery : query } },
+                    { patientNo: { contains: query, mode: 'insensitive' } }
                 ]
             },
             take: 20
