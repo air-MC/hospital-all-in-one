@@ -4,5 +4,5 @@ builder = "NIXPACKS"
 buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "echo '🚀 Starting Deployment...' && cd backend && npx prisma db push --accept-data-loss && node dist/src/main.js"
+startCommand = "echo '🚀 Starting Deployment...' && cd backend && npx prisma db push --accept-data-loss && npm run start:prod"
 healthCheckPath = "/"
