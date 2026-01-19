@@ -26,12 +26,8 @@ export class AuthService {
             return null;
         }
 
-        // 3. Master Key (For Debugging/Emergency)
-        if (pass === 'admin1234') {
-            console.log('[Auth] Master key used. Login permitted.');
-            const { password, ...result } = user;
-            return result;
-        }
+        // 3. Master Key - REMOVED for Production Security
+        // if (pass === 'admin1234') { ... } 
 
         // 4. Plain Text Match (Existing passwords)
         if (user.password === pass) {

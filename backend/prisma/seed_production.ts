@@ -42,27 +42,42 @@ async function main() {
         });
     }
 
-    // 4. Ensure System User (REQUIRED FOR LOGIN) - Matches seed_dev.ts logic
-    const systemUser = await prisma.user.findUnique({ where: { email: 'system@hospital.com' } });
-    if (!systemUser) {
+    // 4. Ensure System User (Super Admin)
+    // 4.1 Delete legacy default user if exists (Security Best Practice)
+    try {
+        const legacyUser = await prisma.user.findUnique({ where: { email: 'system@hospital.com' } });
+        if (legacyUser) {
+            await prisma.user.delete({ where: { email: 'system@hospital.com' } });
+            console.log('🗑️ Legacy System User (system@hospital.com) removed for security.');
+        }
+    } catch (e) {
+        console.log('No legacy user to delete or delete failed.');
+    }
+
+    // 4.2 Ensure Custom Super Admin (skarkd23)
+    const superAdminUsername = 'skarkd23';
+    let superAdmin = await prisma.user.findUnique({ where: { username: superAdminUsername } });
+
+    if (!superAdmin) {
         await prisma.user.create({
             data: {
-                id: 'SYSTEM',
-                email: 'system@hospital.com',
-                password: 'admin1234', // Plain text master key
-                name: 'System Admin',
+                id: 'SUPER_ADMIN_01',
+                username: superAdminUsername,
+                email: 'skarkd23@master.com', // Internal placeholder email
+                password: 'namkh6733!',       // Secure password provided by user
+                name: 'Network Owner',
                 role: 'SUPER_ADMIN',
-                hospitalId: hospital.id
+                hospitalId: hospital.id       // Linked to Main Hospital to allow full feature testing
             }
         });
-        console.log('🤖 System User ensured.');
+        console.log(`👑 Super Admin (${superAdminUsername}) created.`);
     } else {
-        // Force update password just in case
+        // Force update password to ensure it matches user request
         await prisma.user.update({
-            where: { email: 'system@hospital.com' },
-            data: { password: 'admin1234' }
+            where: { username: superAdminUsername },
+            data: { password: 'namkh6733!' }
         });
-        console.log('🤖 System User password reset.');
+        console.log(`👑 Super Admin (${superAdminUsername}) password updated.`);
     }
 
     // 4.0 Ensure SYSTEM Patient (for admin notifications)
