@@ -318,9 +318,13 @@ export class BookingService {
     }
 
     private parseTimeOnDate(date: Date, timeStr: string): Date {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        const newDate = new Date(date);
-        newDate.setHours(hours, minutes, 0, 0);
-        return newDate;
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        // Force KST (UTC+9) interpretation
+        // "2025-01-19T09:00:00+09:00" -> This creates the correct UTC timestamp for 9 AM KST
+        const isoString = `${year}-${month}-${day}T${timeStr}:00+09:00`;
+        return new Date(isoString);
     }
 }
