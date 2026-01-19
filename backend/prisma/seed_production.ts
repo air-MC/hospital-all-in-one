@@ -72,7 +72,7 @@ async function main() {
             data: {
                 id: 'SYSTEM',
                 name: 'System Notifier',
-                phone: '000-0000-0000',
+                phone: '00000000000',
                 birthDate: new Date('1900-01-01'),
                 gender: 'O',
                 hospitalId: hospital.id,
@@ -152,12 +152,12 @@ async function main() {
 
     // 7. Ensure Demo Patient (For convenient testing)
     const demoPatient = await prisma.patient.upsert({
-        where: { phone: '010-1234-5678' },
+        where: { phone: '01012345678' },
         update: {},
         create: {
             id: 'patient_web_demo',
             name: 'Demo Patient',
-            phone: '010-1234-5678',
+            phone: '01012345678',
             birthDate: new Date('1980-01-01'),
             gender: 'M',
             hospitalId: hospital.id,

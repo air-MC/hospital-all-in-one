@@ -16,24 +16,24 @@ export const getApiUrl = () => {
         return url;
     }
 
-    // 2. Dynamic detection for local testing on same network
+    // 2. Dynamic detection
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         const protocol = window.location.protocol;
 
-        console.log(`[API_URL_DETECTION] hostname: ${hostname}, protocol: ${protocol}`);
-
-        // If accessing via Vercel or similar, use the known Railway production backend
-        if (hostname.includes('vercel.app') || hostname.includes('github.io')) {
-            return 'https://hospital-all-in-one-production.up.railway.app';
+        // A. If accessing via localhost, use local backend
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:3000';
         }
 
-        // If we want to use the local IP logic (testing from tablet/mobile in same WIFI)
-        if (hostname !== 'localhost' &&
-            hostname !== '127.0.0.1' &&
-            !hostname.includes('railway.app')) {
+        // B. If accessing via local network IP (e.g. 192.168.x.x), 
+        // assume backend is on the same machine port 3000
+        if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
             return `${protocol}//${hostname}:3000`;
         }
+
+        // C. Default: Use production URL for any other hostname (Vercel, GitHub Pages, Custom Domains)
+        return 'https://hospital-all-in-one-production.up.railway.app';
     }
 
     // 4. Fallback for Local PC development

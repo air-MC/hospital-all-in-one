@@ -16,30 +16,24 @@ export const getApiUrl = () => {
         return url;
     }
 
-    // 2. Dynamic detection for local testing on same network
+    // 2. Dynamic detection
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         const protocol = window.location.protocol;
 
-        // If we are accessing via local IP (e.g. 192.168.x.x), 
+        // A. If accessing via localhost, use local backend
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:3000';
+        }
+
+        // B. If accessing via local network IP (e.g. 192.168.x.x), 
         // assume backend is on the same machine port 3000
-        if (hostname !== 'localhost' &&
-            hostname !== '127.0.0.1' &&
-            !hostname.includes('vercel.app') &&
-            !hostname.includes('railway.app') &&
-            !hostname.includes('github.io')) {
+        if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
             return `${protocol}//${hostname}:3000`;
         }
 
-        // 3. FORCE PRODUCTION URL for GitHub Pages / Vercel
-        if (typeof window !== 'undefined' &&
-            (window.location.hostname.includes('github.io') ||
-                window.location.hostname.includes('vercel.app'))) {
-            return 'https://hospital-all-in-one-production.up.railway.app';
-        }
-
-        // 4. Fallback for Local PC development
-        return 'http://localhost:3000';
+        // C. Default: Use production URL for any other hostname (Vercel, GitHub Pages, Custom Domains)
+        return 'https://hospital-all-in-one-production.up.railway.app';
     }
 
     return 'http://localhost:3000';

@@ -23,7 +23,7 @@ async function bootstrap() {
 
     // Simple request logger
     app.use((req: any, res: any, next: () => void) => {
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'None'}`);
       next();
     });
 
