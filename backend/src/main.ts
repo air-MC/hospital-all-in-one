@@ -29,6 +29,7 @@ async function bootstrap() {
     await app.listen(port, '0.0.0.0');
     console.log(`🚀 Application is running on: 0.0.0.0:${port}`);
     console.log(`🔗 DATABASE_URL length: ${process.env.DATABASE_URL?.length || 0}`);
+    console.log('🚀 Deploy Version: 2026-01-19 v3 (Fix Seed & Login)');
   } catch (error) {
     console.error('❌ CRITICAL ERROR DURING BOOTSTRAP:', error);
     process.exit(1);
