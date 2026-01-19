@@ -188,9 +188,11 @@ export class HospitalService {
         const results = [];
         for (const s of schedules) {
             try {
-                // Ensure valid integers, fallback to defaults if NaN/invalid
                 const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
                 const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
+
+                // Explicitly use null for doctorId when updating department-level schedule
+                const doctorId = null;
 
                 console.log(`[HospitalService] Processing Day ${s.dayOfWeek}: Holiday=${s.isHoliday}, Duration=${slotDuration}, Cap=${capacityPerSlot}`);
 
@@ -198,10 +200,10 @@ export class HospitalService {
                     where: {
                         deptDoctorDayIndex: {
                             departmentId,
-                            doctorId: s.doctorId || null, // Support both department-level and doctor-level
-                            dayOfWeek: s.dayOfWeek
+                            doctorId: null,
+                            dayOfWeek: Number(s.dayOfWeek)
                         }
-                    },
+                    } as any,
                     update: {
                         startTime: s.startTime || '09:00',
                         endTime: s.endTime || '18:00',
@@ -213,8 +215,8 @@ export class HospitalService {
                     },
                     create: {
                         departmentId,
-                        doctorId: s.doctorId || null,
-                        dayOfWeek: s.dayOfWeek,
+                        doctorId: null,
+                        dayOfWeek: Number(s.dayOfWeek),
                         startTime: s.startTime || '09:00',
                         endTime: s.endTime || '18:00',
                         breakStart: s.breakStart || null,
@@ -225,9 +227,9 @@ export class HospitalService {
                     }
                 });
                 results.push(rule);
-            } catch (err) {
-                console.error(`[HospitalService] Error processing day ${s.dayOfWeek}:`, err);
-                throw err; // Re-throw to inform client
+            } catch (error) {
+                console.error(`[HospitalService] Failed to update schedule for day ${s.dayOfWeek}:`, error);
+                throw error;
             }
         }
         return results;
@@ -300,9 +302,9 @@ export class HospitalService {
                         deptDoctorDayIndex: {
                             departmentId: doctor.departmentId,
                             doctorId: doctorId,
-                            dayOfWeek: s.dayOfWeek
+                            dayOfWeek: Number(s.dayOfWeek)
                         }
-                    },
+                    } as any,
                     update: {
                         startTime: s.startTime || '09:00',
                         endTime: s.endTime || '18:00',
@@ -315,7 +317,7 @@ export class HospitalService {
                     create: {
                         departmentId: doctor.departmentId,
                         doctorId: doctorId,
-                        dayOfWeek: s.dayOfWeek,
+                        dayOfWeek: Number(s.dayOfWeek),
                         startTime: s.startTime || '09:00',
                         endTime: s.endTime || '18:00',
                         breakStart: s.breakStart || null,
