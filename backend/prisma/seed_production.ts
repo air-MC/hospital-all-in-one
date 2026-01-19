@@ -65,6 +65,23 @@ async function main() {
         console.log('🤖 System User password reset.');
     }
 
+    // 4.0 Ensure SYSTEM Patient (for admin notifications)
+    const systemPatient = await prisma.patient.findUnique({ where: { id: 'SYSTEM' } });
+    if (!systemPatient) {
+        await prisma.patient.create({
+            data: {
+                id: 'SYSTEM',
+                name: 'System Notifier',
+                phone: '000-0000-0000',
+                birthDate: new Date('1900-01-01'),
+                gender: 'O',
+                hospitalId: hospital.id,
+                patientNo: 'SYSTEM'
+            }
+        });
+        console.log('🤖 System Patient ensured.');
+    }
+
     // 4.1 Backup Admin
     const backupUser = await prisma.user.findUnique({ where: { email: 'admin@test.com' } });
     if (!backupUser) {
@@ -110,10 +127,11 @@ async function main() {
     const allDepts = await prisma.department.findMany();
     for (const d of allDepts) {
         for (let day = 1; day <= 5; day++) { // Monday to Friday
-            await prisma.scheduleRule.upsert({
+            await (prisma.scheduleRule as any).upsert({
                 where: {
-                    departmentDayIndex: {
+                    deptDoctorDayIndex: {
                         departmentId: d.id,
+                        doctorId: null,
                         dayOfWeek: day
                     }
                 },

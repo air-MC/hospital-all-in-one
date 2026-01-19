@@ -59,12 +59,17 @@ async function main() {
         // --- NEW: Add Schedule Rules for 1-5 (Mon-Fri) ---
         for (let day = 1; day <= 5; day++) {
             const existingRule = await prisma.scheduleRule.findFirst({
-                where: { departmentId: dept.id, dayOfWeek: day }
+                where: {
+                    departmentId: dept.id,
+                    doctorId: null,
+                    dayOfWeek: day
+                }
             });
             if (!existingRule) {
                 await prisma.scheduleRule.create({
                     data: {
                         departmentId: dept.id,
+                        doctorId: null,
                         dayOfWeek: day,
                         startTime: '09:00',
                         endTime: '18:00',
@@ -96,6 +101,22 @@ async function main() {
                 gender: 'M',
                 hospitalId: hospital.id,
                 patientNo: 'P-000000-0001'
+            }
+        });
+    }
+
+    // 3.1 Ensure SYSTEM Patient
+    const systemPatient = await prisma.patient.findUnique({ where: { id: 'SYSTEM' } });
+    if (!systemPatient) {
+        await prisma.patient.create({
+            data: {
+                id: 'SYSTEM',
+                name: 'System Notifier',
+                phone: '000-0000-0000',
+                birthDate: new Date('1900-01-01'),
+                gender: 'O',
+                hospitalId: hospital.id,
+                patientNo: 'SYSTEM'
             }
         });
     }
