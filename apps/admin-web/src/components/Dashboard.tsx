@@ -17,8 +17,8 @@ export const Dashboard = () => {
     if (isLoading) return <div className="flex items-center justify-center h-64 text-slate-400">📊 데이터를 불러오는 중...</div>;
     if (error) {
         // Detailed error info
-        const status = error.response?.status;
-        const errorMessage = error.response?.data?.message || error.message;
+        const status = (error as any).response?.status;
+        const errorMessage = (error as any).response?.data?.message || (error as any).message;
 
         return (
             <div className="p-8 bg-red-50 text-red-600 rounded-xl border border-red-100 mb-4 flex flex-col items-center">

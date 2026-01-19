@@ -290,7 +290,7 @@ function App() {
         </nav>
 
         <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
-          v2.4.0 (Security Enabled)
+          v2.5.0 (Deployment Fix)
         </div>
       </aside>
 
