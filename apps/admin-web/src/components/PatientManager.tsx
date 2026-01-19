@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { searchPatients, registerPatient, getPatientAppointments, cancelAppointment } from '../hooks/useCareManager';
+import { searchPatients, registerPatient, getPatientAppointments, cancelAppointment, updatePatient } from '../hooks/useCareManager';
 import { DateTime } from 'luxon';
 import clsx from 'clsx';
 
@@ -79,11 +79,50 @@ export const PatientManager = () => {
         }
     };
 
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({
+        name: '',
+        phone: '',
+        birthDate: '',
+        gender: 'M'
+    });
+
+    // ... (rest of previous code remains same, but let's insert the update functions)
+
+    const handleUpdatePatient = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedPatient) return;
+        setIsLoading(true);
+        try {
+            const updated = await updatePatient(selectedPatient.id, editData);
+            alert('✅ 환자 정보가 수정되었습니다.');
+            setSelectedPatient(updated); // Update logic might return the updated entity
+            setIsEditing(false);
+            // Refresh results list too
+            const results = await searchPatients(searchTerm);
+            setSearchResults(results);
+        } catch (error: any) {
+            alert(`❌ 수정 실패: ${error.response?.data?.message || error.message}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const startEditing = () => {
+        setEditData({
+            name: selectedPatient.name,
+            phone: selectedPatient.phone,
+            birthDate: DateTime.fromISO(selectedPatient.birthDate).toFormat('yyyy-MM-dd'),
+            gender: selectedPatient.gender
+        });
+        setIsEditing(true);
+    };
+
     if (selectedPatient) {
         return (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <button
-                    onClick={() => setSelectedPatient(null)}
+                    onClick={() => { setSelectedPatient(null); setIsEditing(false); }}
                     className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold mb-4 transition-colors"
                 >
                     <span>←</span> 환자 목록으로 돌아가기
@@ -91,31 +130,95 @@ export const PatientManager = () => {
 
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="p-8 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                        <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-3xl shadow-inner">
-                                {selectedPatient.name[0]}
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-3 mb-1">
-                                    <h2 className="text-2xl font-bold text-slate-800">{selectedPatient.name}</h2>
-                                    <span className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-xs font-mono font-bold">
-                                        {selectedPatient.patientNo}
-                                    </span>
+                        {isEditing ? (
+                            <form onSubmit={handleUpdatePatient} className="flex-1 flex flex-wrap gap-4 items-end">
+                                <div className="flex-1 min-w-[200px]">
+                                    <label className="block text-[10px] font-bold text-slate-400 mb-1">이름</label>
+                                    <input
+                                        type="text"
+                                        value={editData.name}
+                                        onChange={e => setEditData({ ...editData, name: e.target.value })}
+                                        className="w-full border-2 border-indigo-100 p-2 rounded-lg outline-none focus:border-indigo-500 font-bold"
+                                    />
                                 </div>
-                                <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
-                                    <span>{selectedPatient.phone}</span>
-                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                    <span>{DateTime.fromISO(selectedPatient.birthDate).toFormat('yyyy.MM.dd')}</span>
-                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                    <span>{selectedPatient.gender === 'M' ? '남성' : '여성'}</span>
+                                <div className="flex-1 min-w-[200px]">
+                                    <label className="block text-[10px] font-bold text-slate-400 mb-1">연락처</label>
+                                    <input
+                                        type="tel"
+                                        value={editData.phone}
+                                        onChange={e => setEditData({ ...editData, phone: e.target.value })}
+                                        className="w-full border-2 border-indigo-100 p-2 rounded-lg outline-none focus:border-indigo-500 font-bold"
+                                    />
                                 </div>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow hover:bg-indigo-700 transition">
-                                ✏️ 정보 수정
-                            </button>
-                        </div>
+                                <div className="w-40">
+                                    <label className="block text-[10px] font-bold text-slate-400 mb-1">생년월일</label>
+                                    <input
+                                        type="date"
+                                        value={editData.birthDate}
+                                        onChange={e => setEditData({ ...editData, birthDate: e.target.value })}
+                                        className="w-full border-2 border-indigo-100 p-2 rounded-lg outline-none focus:border-indigo-500 font-bold"
+                                    />
+                                </div>
+                                <div className="w-24">
+                                    <label className="block text-[10px] font-bold text-slate-400 mb-1">성별</label>
+                                    <select
+                                        value={editData.gender}
+                                        onChange={e => setEditData({ ...editData, gender: e.target.value })}
+                                        className="w-full border-2 border-indigo-100 p-2 rounded-lg outline-none focus:border-indigo-500 font-bold"
+                                    >
+                                        <option value="M">남성</option>
+                                        <option value="F">여성</option>
+                                    </select>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md"
+                                    >
+                                        저장
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditing(false)}
+                                        className="bg-slate-200 text-slate-600 px-4 py-2 rounded-lg font-bold hover:bg-slate-300 transition"
+                                    >
+                                        취소
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-6">
+                                    <div className="w-20 h-20 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-3xl shadow-inner">
+                                        {selectedPatient.name[0]}
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <h2 className="text-2xl font-bold text-slate-800">{selectedPatient.name}</h2>
+                                            <span className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-xs font-mono font-bold">
+                                                {selectedPatient.patientNo}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
+                                            <span>{selectedPatient.phone}</span>
+                                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                            <span>{DateTime.fromISO(selectedPatient.birthDate).toFormat('yyyy.MM.dd')}</span>
+                                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                            <span>{selectedPatient.gender === 'M' ? '남성' : '여성'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={startEditing}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow hover:bg-indigo-700 transition"
+                                    >
+                                        ✏️ 정보 수정
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className="p-8">

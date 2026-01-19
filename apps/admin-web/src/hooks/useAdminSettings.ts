@@ -42,3 +42,11 @@ export const getDepartmentSchedules = async (departmentId: string) => {
 export const updateDepartmentSchedule = async (departmentId: string, schedules: any[]) => {
     return axios.post(`${API_URL}/hospital/departments/${departmentId}/schedules`, schedules);
 }
+
+export const getDoctorSchedules = async (doctorId: string) => {
+    return axios.get(`${API_URL}/hospital/doctors/${doctorId}/schedules`).then(res => res.data);
+}
+
+export const updateDoctorSchedule = async (doctorId: string, schedules: any[]) => {
+    return axios.post(`${API_URL}/hospital/doctors/${doctorId}/schedules`, schedules);
+}

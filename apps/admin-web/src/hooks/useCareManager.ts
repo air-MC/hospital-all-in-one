@@ -120,5 +120,5 @@ export const walkInRegistration = async (patientId: string, departmentId: string
 
 // --- Patient Management ---
 export const updatePatient = async (id: string, data: { name?: string; phone?: string; birthDate?: string; gender?: string }) => {
-    return axios.post(`${API_URL}/hospital/patients/${id}/update`, data);
+    return axios.post(`${API_URL}/hospital/patients/${id}/update`, data).then(res => res.data);
 };
