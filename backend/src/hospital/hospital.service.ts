@@ -102,10 +102,16 @@ export class HospitalService {
     }
 
     async createDoctor(name: string, departmentId: string) {
+        const dept = await this.prisma.department.findUnique({
+            where: { id: departmentId }
+        });
+        if (!dept) throw new Error('Department not found');
+
         return this.prisma.doctor.create({
             data: {
                 name,
-                departmentId
+                departmentId,
+                hospitalId: dept.hospitalId
             }
         });
     }

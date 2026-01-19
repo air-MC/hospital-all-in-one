@@ -30,6 +30,7 @@ model Hospital {
   surgeryCases SurgeryCase[]
   carePlans    CarePlan[]
   surgeryTypes SurgeryType[]
+  doctors      Doctor[]
   auditLogs    AuditLog[]
 
   createdAt DateTime @default(now())
@@ -57,6 +58,8 @@ model Department {
 
 model Doctor {
   id           String        @id @default(uuid())
+  hospitalId   String
+  hospital     Hospital      @relation(fields: [hospitalId], references: [id])
   departmentId String
   department   Department    @relation(fields: [departmentId], references: [id])
   name         String
@@ -108,7 +111,7 @@ model ScheduleRule {
   slotDuration Int         @default(10)
   capacityPerSlot Int      @default(3)
 
-  @@unique([departmentId, dayOfWeek])
+  @@unique([departmentId, dayOfWeek], name: "departmentDayIndex")
 }
 
 model Slot {

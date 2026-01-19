@@ -34,6 +34,7 @@ async function main() {
             data: {
                 id: 'doc_test_01',
                 departmentId: dept.id,
+                hospitalId: hospital.id,
                 name: '시스템관리자'
             }
         });
@@ -109,7 +110,7 @@ async function main() {
         for (let day = 1; day <= 5; day++) { // Monday to Friday
             await prisma.scheduleRule.upsert({
                 where: {
-                    departmentId_dayOfWeek: {
+                    departmentDayIndex: {
                         departmentId: d.id,
                         dayOfWeek: day
                     }
