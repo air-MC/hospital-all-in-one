@@ -50,7 +50,8 @@ async function main() {
             doctor = await prisma.doctor.create({
                 data: {
                     name: d.doctor,
-                    departmentId: dept.id
+                    departmentId: dept.id,
+                    hospitalId: dept.hospitalId
                 }
             });
         }

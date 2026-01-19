@@ -42,28 +42,29 @@ export class BookingService {
         const dayOfWeek = date.getDay();
         console.log(`[BookingService] Generating slots for Dept: ${departmentId}, Date: ${date.toISOString()}, DayOfWeek: ${dayOfWeek}`);
 
-        let rule = await this.prisma.scheduleRule.findFirst({
+        const dbRule = await this.prisma.scheduleRule.findFirst({
             where: { departmentId, dayOfWeek }
         });
 
-        if (!rule) {
+        // Force non-null type by using default object if dbRule is missing
+        const finalRule: any = dbRule || {
+            id: 'default',
+            departmentId,
+            dayOfWeek,
+            startTime: '09:00',
+            endTime: '18:00',
+            breakStart: '12:00',
+            breakEnd: '13:00',
+            slotDuration: 30,
+            capacityPerSlot: 3,
+            isHoliday: false
+        };
+
+        if (!dbRule) {
             console.warn(`[BookingService] No ScheduleRule found for Dept: ${departmentId}, DayOfWeek: ${dayOfWeek}. Using DEFAULT rule.`);
-            // Use Default Rule on the fly
-            rule = {
-                id: 'default',
-                departmentId,
-                dayOfWeek,
-                startTime: '09:00',
-                endTime: '18:00',
-                breakStart: '12:00',
-                breakEnd: '13:00',
-                slotDuration: 30,
-                capacityPerSlot: 3,
-                isHoliday: false
-            } as any;
         }
 
-        if (rule.isHoliday) {
+        if (finalRule.isHoliday) {
             return { count: 0, message: 'Holiday' };
         }
 
@@ -93,10 +94,10 @@ export class BookingService {
             }
         });
 
-        let currentTime = this.parseTimeOnDate(date, rule.startTime);
-        const endTime = this.parseTimeOnDate(date, rule.endTime);
-        const breakStart = rule.breakStart ? this.parseTimeOnDate(date, rule.breakStart) : null;
-        const breakEnd = rule.breakEnd ? this.parseTimeOnDate(date, rule.breakEnd) : null;
+        let currentTime = this.parseTimeOnDate(date, finalRule.startTime);
+        const endTime = this.parseTimeOnDate(date, finalRule.endTime);
+        const breakStart = finalRule.breakStart ? this.parseTimeOnDate(date, finalRule.breakStart) : null;
+        const breakEnd = finalRule.breakEnd ? this.parseTimeOnDate(date, finalRule.breakEnd) : null;
 
         const slotsToCreate = [];
         while (currentTime < endTime) {
@@ -106,14 +107,14 @@ export class BookingService {
                     departmentId,
                     doctorId: doctorId || null,
                     startDateTime: currentTime,
-                    endDateTime: addMinutes(currentTime, rule.slotDuration),
-                    capacity: rule.capacityPerSlot,
+                    endDateTime: addMinutes(currentTime, finalRule.slotDuration),
+                    capacity: finalRule.capacityPerSlot,
                     bookedCount: 0,
                     status: SlotStatus.OPEN,
                     version: 0
                 });
             }
-            currentTime = addMinutes(currentTime, rule.slotDuration);
+            currentTime = addMinutes(currentTime, finalRule.slotDuration);
         }
 
         console.log(`[BookingService] Creating ${slotsToCreate.length} slots...`);

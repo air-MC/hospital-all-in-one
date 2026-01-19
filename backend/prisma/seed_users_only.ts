@@ -22,6 +22,7 @@ async function main() {
             id: 'doc_test_01',
             name: 'Dr. Kim (Orthopedics)',
             departmentId: dept.id,
+            hospitalId: hospital.id
             // [FIX] hospitalId not needed for Doctor as it is optional? 
             // Wait, schema says Doctor -> Department -> Hospital. Doctor does not have hospitalId directly?
             // Let me check schema. Doctor: id, departmentId, department. Department: hospitalId.
