@@ -187,20 +187,15 @@ export class HospitalService {
     }
 
     async updateDepartmentSchedule(departmentId: string, schedules: any[]) {
-        console.log(`[HospitalService] Updating schedules for Dept: ${departmentId}, Count: ${schedules.length}`);
         const results = [];
         for (const s of schedules) {
             try {
                 const dayOfWeek = Number(s.dayOfWeek);
-                if (isNaN(dayOfWeek)) {
-                    console.warn(`[HospitalService] Invalid dayOfWeek: ${s.dayOfWeek}, skipping.`);
-                    continue;
-                }
+                if (isNaN(dayOfWeek)) continue;
 
                 const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
                 const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
 
-                console.log(`[HospitalService] Searching existing rule - Dept: ${departmentId}, Day: ${dayOfWeek}`);
                 const existing = await this.prisma.scheduleRule.findFirst({
                     where: {
                         departmentId,
@@ -221,13 +216,11 @@ export class HospitalService {
 
                 let rule;
                 if (existing) {
-                    console.log(`[HospitalService] Updating rule ID: ${existing.id}`);
                     rule = await this.prisma.scheduleRule.update({
                         where: { id: existing.id },
                         data
                     });
                 } else {
-                    console.log(`[HospitalService] Creating new rule for day ${dayOfWeek}`);
                     rule = await this.prisma.scheduleRule.create({
                         data: {
                             ...data,
@@ -239,8 +232,8 @@ export class HospitalService {
                 }
                 results.push(rule);
             } catch (error: any) {
-                console.error(`[HospitalService] ERROR for day ${s.dayOfWeek}:`, error.message);
-                throw new Error(`Failed to update day ${s.dayOfWeek}: ${error.message}`);
+                console.error(`[HospitalService] Failed to update day ${s.dayOfWeek}:`, error.message);
+                throw error;
             }
         }
         return results;
@@ -296,20 +289,18 @@ export class HospitalService {
             where: { id: doctorId }
         });
 
-        if (!doctor) {
-            throw new Error('Doctor not found');
-        }
+        if (!doctor) throw new Error('Doctor not found');
 
-        console.log(`[HospitalService] Updating doctor schedules for Doctor: ${doctorId}`);
         const results = [];
 
         for (const s of schedules) {
             try {
                 const dayOfWeek = Number(s.dayOfWeek);
+                if (isNaN(dayOfWeek)) continue;
+
                 const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
                 const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
 
-                // 2. Manually find existing doctor rule
                 const existing = await this.prisma.scheduleRule.findFirst({
                     where: {
                         departmentId: doctor.departmentId,
@@ -345,8 +336,8 @@ export class HospitalService {
                     });
                 }
                 results.push(rule);
-            } catch (err) {
-                console.error(`[HospitalService] Error processing doctor schedule day ${s.dayOfWeek}:`, err);
+            } catch (err: any) {
+                console.error(`[HospitalService] Error processing doctor schedule day ${s.dayOfWeek}:`, err.message);
                 throw err;
             }
         }
