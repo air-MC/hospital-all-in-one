@@ -25,12 +25,16 @@ export const getApiUrl = () => {
             return `${protocol}//${hostname}:3000`;
         }
 
-        // 3. If accessing via Vercel, use the known Railway production backend
-        if (hostname.includes('vercel.app')) {
+        // 3. FORCE PRODUCTION URL for GitHub Pages / Vercel
+        if (typeof window !== 'undefined' &&
+            (window.location.hostname.includes('github.io') ||
+                window.location.hostname.includes('vercel.app'))) {
             return 'https://hospital-all-in-one-production.up.railway.app';
         }
+
+        // 4. Fallback for Local PC development
+        return 'http://localhost:3000';
     }
 
-    // 4. Fallback for Local PC development
     return 'http://localhost:3000';
 };

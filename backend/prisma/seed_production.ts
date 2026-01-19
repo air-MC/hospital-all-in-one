@@ -101,6 +101,34 @@ async function main() {
             create: t
         });
     }
+
+    // 6. Seed Default Schedule Rules for ALL departments
+    console.log('⏰ Seeding default schedule rules...');
+    const allDepts = await prisma.department.findMany();
+    for (const d of allDepts) {
+        for (let day = 1; day <= 5; day++) { // Monday to Friday
+            await prisma.scheduleRule.upsert({
+                where: {
+                    departmentId_dayOfWeek: {
+                        departmentId: d.id,
+                        dayOfWeek: day
+                    }
+                },
+                update: {},
+                create: {
+                    departmentId: d.id,
+                    dayOfWeek: day,
+                    startTime: '09:00',
+                    endTime: '18:00',
+                    breakStart: '12:00',
+                    breakEnd: '13:00',
+                    slotDuration: 30,
+                    capacityPerSlot: 5
+                }
+            });
+        }
+    }
+
     console.log('✅ Production Data Synchronized Successfully.');
 }
 

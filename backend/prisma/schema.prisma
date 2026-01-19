@@ -107,6 +107,8 @@ model ScheduleRule {
   isHoliday    Boolean     @default(false)
   slotDuration Int         @default(10)
   capacityPerSlot Int      @default(3)
+
+  @@unique([departmentId, dayOfWeek])
 }
 
 model Slot {

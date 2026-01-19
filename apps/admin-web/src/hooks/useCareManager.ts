@@ -64,3 +64,7 @@ export const assignWard = async (surgeryId: string, roomNumber: string) => {
 export const searchPatients = async (query: string) => {
     return axios.get(`${API_URL}/hospital/search?query=${query}`).then(res => res.data);
 };
+
+export const registerPatient = async (data: { name: string, phone: string, birthDate: string, gender: string }) => {
+    return axios.post(`${API_URL}/hospital/register`, data);
+};

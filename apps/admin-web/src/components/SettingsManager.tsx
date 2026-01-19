@@ -327,7 +327,7 @@ export const SettingsManager = () => {
                                     <div className="bg-white p-6 rounded-xl shadow-lg border border-teal-100 flex flex-col items-center text-center">
                                         <div className="bg-white p-2 rounded-lg border-2 border-slate-900 mb-4">
                                             <img
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://hospital-patient-web.vercel.app/?hospitalId=${hospital.id}`)}`}
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://air-MC.github.io/hospital-all-in-one/patient/?hospitalId=${hospital.id}`)}`}
                                                 alt="Patient App QR"
                                                 className="w-48 h-48"
                                             />
@@ -336,7 +336,7 @@ export const SettingsManager = () => {
                                         <p className="text-xs text-slate-400 font-mono mb-4">{hospital.id}</p>
 
                                         <div className="text-xs bg-slate-100 p-3 rounded text-slate-500 w-full break-all">
-                                            URL: https://hospital-patient-web.vercel.app/?hospitalId={hospital.id}
+                                            URL: https://air-MC.github.io/hospital-all-in-one/patient/?hospitalId={hospital.id}
                                         </div>
                                     </div>
                                 </div>

@@ -135,6 +135,13 @@ export const LoginScreen = ({ onLogin }: { onLogin: (id: string) => void }) => {
                                     </>
                                 )}
                             </button>
+                            <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-1">
+                                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Debug Info</span>
+                                <code className="text-[9px] bg-slate-50 px-2 py-1 rounded border border-slate-100 text-slate-500 font-mono break-all w-full text-center">
+                                    API: {API_URL}<br />
+                                    HOSP: {hospitalId || 'NOT_SET'}
+                                </code>
+                            </div>
                         </form>
                     </div>
                 ) : (
