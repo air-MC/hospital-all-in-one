@@ -121,4 +121,31 @@ export class CareController {
     async deleteSurgeryType(@Param('id') id: string) {
         return this.careService.deleteSurgeryType(id);
     }
+
+    // Department Management
+    @Post('departments')
+    async createDepartment(@Body() body: { name: string; hospitalId: string }) {
+        return this.careService.createDepartment(body);
+    }
+
+    @Delete('departments/:id')
+    async deleteDepartment(@Param('id') id: string) {
+        return this.careService.deleteDepartment(id);
+    }
+
+    @Patch('departments/:id')
+    async updateDepartment(@Param('id') id: string, @Body() body: { name: string }) {
+        return this.careService.updateDepartment(id, body);
+    }
+
+    // Doctor Management
+    @Delete('doctors/:id')
+    async deleteDoctor(@Param('id') id: string) {
+        return this.careService.deleteDoctor(id);
+    }
+
+    @Patch('doctors/:id')
+    async updateDoctor(@Param('id') id: string, @Body() body: { name: string; departmentId?: string }) {
+        return this.careService.updateDoctor(id, body);
+    }
 }

@@ -492,4 +492,103 @@ export class CareService {
             where: { id }
         });
     }
+
+    // Department Management
+    async createDepartment(data: { name: string; hospitalId: string }) {
+        return this.prisma.department.create({
+            data: {
+                name: data.name,
+                hospitalId: data.hospitalId
+            }
+        });
+    }
+
+    async deleteDepartment(id: string) {
+        // Check if department has doctors
+        const doctorCount = await this.prisma.doctor.count({
+            where: { departmentId: id }
+        });
+
+        if (doctorCount > 0) {
+            throw new Error(`Cannot delete department: ${doctorCount} doctor(s) still assigned. Please reassign or delete them first.`);
+        }
+
+        // Check if department has schedule rules
+        await this.prisma.scheduleRule.deleteMany({
+            where: { departmentId: id }
+        });
+
+        // Check if department has slots
+        const slotCount = await this.prisma.slot.count({
+            where: { departmentId: id }
+        });
+
+        if (slotCount > 0) {
+            throw new Error(`Cannot delete department: ${slotCount} slot(s) exist. Please delete slots first or contact system admin.`);
+        }
+
+        return this.prisma.department.delete({
+            where: { id }
+        });
+    }
+
+    async updateDepartment(id: string, data: { name: string }) {
+        return this.prisma.department.update({
+            where: { id },
+            data: { name: data.name }
+        });
+    }
+
+    // Doctor Management
+    async deleteDoctor(id: string) {
+        // Check if doctor has appointments
+        const apptCount = await this.prisma.appointment.count({
+            where: { doctorsId: id }
+        });
+
+        if (apptCount > 0) {
+            throw new Error(`Cannot delete doctor: ${apptCount} appointment(s) exist. Please reassign or cancel them first.`);
+        }
+
+        // Check if doctor has surgery cases
+        const surgeryCount = await this.prisma.surgeryCase.count({
+            where: { doctorId: id }
+        });
+
+        if (surgeryCount > 0) {
+            throw new Error(`Cannot delete doctor: ${surgeryCount} surgery case(s) exist. Please reassign them first.`);
+        }
+
+        // Delete associated slots
+        await this.prisma.slot.deleteMany({
+            where: { doctorId: id }
+        });
+
+        return this.prisma.doctor.delete({
+            where: { id }
+        });
+    }
+
+    async updateDoctor(id: string, data: { name: string; departmentId?: string }) {
+        const updateData: any = { name: data.name };
+
+        if (data.departmentId) {
+            // Verify department exists and get hospitalId
+            const dept = await this.prisma.department.findUnique({
+                where: { id: data.departmentId }
+            });
+
+            if (!dept) {
+                throw new Error('Department not found');
+            }
+
+            updateData.departmentId = data.departmentId;
+            updateData.hospitalId = dept.hospitalId;
+        }
+
+        return this.prisma.doctor.update({
+            where: { id },
+            data: updateData
+        });
+    }
 }

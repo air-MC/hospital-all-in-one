@@ -86,3 +86,25 @@ export const getPatientAppointments = async (patientId: string) => {
 export const cancelAppointment = async (appointmentId: string) => {
     return axios.patch(`${API_URL}/booking/appointments/${appointmentId}/status`, { status: 'CANCELLED' });
 };
+
+// --- Department Management ---
+export const createDepartment = async (data: { name: string; hospitalId: string }) => {
+    return axios.post(`${API_URL}/care/departments`, data);
+};
+
+export const deleteDepartment = async (id: string) => {
+    return axios.delete(`${API_URL}/care/departments/${id}`);
+};
+
+export const updateDepartment = async (id: string, data: { name: string }) => {
+    return axios.patch(`${API_URL}/care/departments/${id}`, data);
+};
+
+// --- Doctor Management ---
+export const deleteDoctor = async (id: string) => {
+    return axios.delete(`${API_URL}/care/doctors/${id}`);
+};
+
+export const updateDoctor = async (id: string, data: { name: string; departmentId?: string }) => {
+    return axios.patch(`${API_URL}/care/doctors/${id}`, data);
+};

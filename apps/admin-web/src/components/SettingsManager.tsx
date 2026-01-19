@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { getDepartments, createDepartment, getDoctors, createDoctor, createSurgeryType, getHospital, updateHospital, updateHospitalStatus } from '../hooks/useAdminSettings';
-import { getSurgeryTypes, deleteSurgeryType } from '../hooks/useCareManager';
+import { getSurgeryTypes, deleteSurgeryType, deleteDepartment, updateDepartment, deleteDoctor, updateDoctor } from '../hooks/useCareManager';
 import { ScheduleSettings } from './ScheduleSettings';
 
 export const SettingsManager = () => {
@@ -94,6 +94,53 @@ export const SettingsManager = () => {
             alert(`삭제 실패: ${e.message}`);
         }
     };
+
+    const handleDeleteDepartment = async (id: string, name: string) => {
+        if (!confirm(`'${name}' 진료과를 정말 삭제하시겠습니까?\n\n⚠️ 소속 의료진이 있거나 슬롯이 있으면 삭제할 수 없습니다.`)) return;
+        try {
+            await deleteDepartment(id);
+            mutate('departments');
+            alert('✅ 진료과가 삭제되었습니다.');
+        } catch (e: any) {
+            alert(`❌ 삭제 실패: ${e.response?.data?.message || e.message}`);
+        }
+    };
+
+    const handleUpdateDepartment = async (id: string, currentName: string) => {
+        const newName = prompt(`진료과 이름 수정:`, currentName);
+        if (!newName || newName === currentName) return;
+        try {
+            await updateDepartment(id, { name: newName });
+            mutate('departments');
+            alert('✅ 진료과 이름이 수정되었습니다.');
+        } catch (e: any) {
+            alert(`❌ 수정 실패: ${e.message}`);
+        }
+    };
+
+    const handleDeleteDoctor = async (id: string, name: string) => {
+        if (!confirm(`'${name}' 의료진을 정말 삭제하시겠습니까?\n\n⚠️ 예약이나 수술 케이스가 있으면 삭제할 수 없습니다.`)) return;
+        try {
+            await deleteDoctor(id);
+            mutate('doctors');
+            alert('✅ 의료진이 삭제되었습니다.');
+        } catch (e: any) {
+            alert(`❌ 삭제 실패: ${e.response?.data?.message || e.message}`);
+        }
+    };
+
+    const handleUpdateDoctor = async (id: string, currentName: string) => {
+        const newName = prompt(`의료진 이름 수정:`, currentName);
+        if (!newName || newName === currentName) return;
+        try {
+            await updateDoctor(id, { name: newName });
+            mutate('doctors');
+            alert('✅ 의료진 이름이 수정되었습니다.');
+        } catch (e: any) {
+            alert(`❌ 수정 실패: ${e.message}`);
+        }
+    };
+
     const handleUpdateHospital = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!hospital || !hospitalName) return;
@@ -182,9 +229,25 @@ export const SettingsManager = () => {
                                 <h3 className="font-bold text-lg mb-4 text-slate-500">등록된 진료과 목록</h3>
                                 <ul className="space-y-2 max-h-[400px] overflow-y-auto">
                                     {departments?.map((d: any) => (
-                                        <li key={d.id} className="flex justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                            <span className="font-bold text-slate-700">{d.name}</span>
-                                            <span className="text-xs text-slate-400 bg-white px-2 py-1 rounded border">{d.doctors?.length || 0}명의 의료진</span>
+                                        <li key={d.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-indigo-200 transition">
+                                            <div className="flex-1">
+                                                <span className="font-bold text-slate-700">{d.name}</span>
+                                                <span className="text-xs text-slate-400 ml-3 bg-white px-2 py-1 rounded border">{d.doctors?.length || 0}명의 의료진</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleUpdateDepartment(d.id, d.name)}
+                                                    className="text-xs px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition font-bold"
+                                                >
+                                                    ✏️ 수정
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteDepartment(d.id, d.name)}
+                                                    className="text-xs px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition font-bold"
+                                                >
+                                                    🗑️ 삭제
+                                                </button>
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
@@ -222,17 +285,28 @@ export const SettingsManager = () => {
                                 <h3 className="font-bold text-lg mb-4 text-slate-500">등록된 의료진 목록</h3>
                                 <ul className="space-y-2 max-h-[400px] overflow-y-auto">
                                     {doctors?.map((d: any) => (
-                                        <li key={d.id} className="flex justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-                                            <div className="flex items-center gap-3">
+                                        <li key={d.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-indigo-200 transition">
+                                            <div className="flex items-center gap-3 flex-1">
                                                 <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">{d.name?.[0] || 'D'}</div>
                                                 <div>
                                                     <div className="font-bold text-slate-700">{d.name}</div>
                                                     <div className="text-[10px] text-slate-400">{d.department?.name || '소속 없음'}</div>
                                                 </div>
                                             </div>
-                                            <span className="text-xs text-slate-500 flex items-center">
-                                                ID: {d.id.slice(0, 8)}...
-                                            </span>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleUpdateDoctor(d.id, d.name)}
+                                                    className="text-xs px-3 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition font-bold"
+                                                >
+                                                    ✏️ 수정
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteDoctor(d.id, d.name)}
+                                                    className="text-xs px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition font-bold"
+                                                >
+                                                    🗑️ 삭제
+                                                </button>
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
