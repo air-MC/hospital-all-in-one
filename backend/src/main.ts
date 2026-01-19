@@ -18,7 +18,7 @@ async function bootstrap() {
       ],
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,
-      allowedHeaders: 'Content-Type, Accept, Authorization',
+      allowedHeaders: 'Content-Type, Accept, Authorization, Idempotency-Key, idempotency-key',
     });
 
     // Simple request logger
