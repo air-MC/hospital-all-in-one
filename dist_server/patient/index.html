@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/hospital-all-in-one/patient/icon-512.png" />
+  <link rel="manifest" href="/hospital-all-in-one/patient/manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>스마트 병원 환자용</title>
+  <script type="module" crossorigin src="/hospital-all-in-one/patient/assets/index-Bu9mJ8Hh.js"></script>
+  <link rel="stylesheet" crossorigin href="/hospital-all-in-one/patient/assets/index-Cm7T19aK.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
+          .then(reg => console.log('SW registered!', reg))
+          .catch(err => console.log('SW registration failed!', err));
+      });
+    }
+  </script>
+</body>
+
+</html>
