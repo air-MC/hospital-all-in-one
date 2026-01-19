@@ -130,6 +130,21 @@ async function main() {
         }
     }
 
+    // 7. Ensure Demo Patient (For convenient testing)
+    const demoPatient = await prisma.patient.upsert({
+        where: { phone: '010-1234-5678' },
+        update: {},
+        create: {
+            id: 'patient_web_demo',
+            name: 'Demo Patient',
+            phone: '010-1234-5678',
+            birthDate: new Date('1980-01-01'),
+            gender: 'M',
+            hospitalId: hospital.id
+        }
+    });
+    console.log('👤 Demo Patient ensured (010-1234-5678).');
+
     console.log('✅ Production Data Synchronized Successfully.');
 }
 
