@@ -9,8 +9,7 @@ const API_URL = getApiUrl();
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export const Dashboard = () => {
-    // [FIX] Force explicit Production URL for clear verification
-    const { data: stats, error, isLoading } = useSWR(`https://hospital-all-in-one-production.up.railway.app/booking/stats`, fetcher, {
+    const { data: stats, error, isLoading } = useSWR(`${API_URL}/booking/stats`, fetcher, {
         refreshInterval: 5000,
         onError: (err) => console.error('[Dashboard] Stats fetch error:', err)
     });
@@ -18,13 +17,27 @@ export const Dashboard = () => {
     if (isLoading) return <div className="flex items-center justify-center h-64 text-slate-400">📊 데이터를 불러오는 중...</div>;
     if (error) {
         return (
-            <div className="p-8 bg-red-50 text-red-600 rounded-xl border border-red-100 mb-4">
-                <p className="font-bold">통계 데이터를 가져오지 못했습니다.</p>
-                <p className="text-xs mt-1 opacity-70">URL: {API_URL}/booking/stats</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold"
-                >다시 시도</button>
+            <div className="p-8 bg-red-50 text-red-600 rounded-xl border border-red-100 mb-4 flex flex-col items-center">
+                <p className="font-bold text-lg mb-2">📡 서버 연결 실패</p>
+                <p className="text-sm opacity-80 mb-4">API URL: <span className="font-mono bg-red-100 px-2 py-0.5 rounded">{API_URL}</span></p>
+                <p className="text-xs text-slate-500 mb-4 text-center max-w-md">
+                    통계 데이터를 가져오지 못했습니다. 환경 설정에서 API 주소가 올바른지 확인해주세요.<br />
+                    (Vercel/Railway 배포 주소가 맞는지 확인 필요)
+                </p>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
+                    >새로고침</button>
+                    <a
+                        href="/settings" // This URL path doesn't exist in React Router, but hitting Settings in menu calls setActiveMenu.
+                        // Since we can't deep link easily without router update, let's just use a reload prompt or guide.
+                        onClick={(e) => { e.preventDefault(); alert("좌측 메뉴의 '환경 설정'으로 이동하여 [시스템 연결] 탭을 확인하세요."); }}
+                        className="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50"
+                    >
+                        설정 확인
+                    </a>
+                </div>
             </div>
         );
     }

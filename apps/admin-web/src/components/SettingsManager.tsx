@@ -4,7 +4,7 @@ import { getDepartments, createDepartment, getDoctors, createDoctor, createSurge
 import { getSurgeryTypes } from '../hooks/useCareManager';
 
 export const SettingsManager = () => {
-    const [activeTab, setActiveTab] = useState<'HOSPITAL' | 'DEPT' | 'DOCTOR' | 'SURGERY'>('HOSPITAL');
+    const [activeTab, setActiveTab] = useState<'HOSPITAL' | 'DEPT' | 'DOCTOR' | 'SURGERY' | 'SYSTEM'>('HOSPITAL');
 
     // Data Fetching
     const { data: departments } = useSWR('departments', getDepartments);
@@ -17,6 +17,13 @@ export const SettingsManager = () => {
     const [docName, setDocName] = useState('');
     const [selectedDeptId, setSelectedDeptId] = useState('');
     const [hospitalName, setHospitalName] = useState('');
+
+    // System Connection State
+    const [apiUrl, setApiUrl] = useState(() => {
+        // Initial value from localStorage or detected URL
+        const saved = localStorage.getItem('custom_api_url');
+        return saved || 'https://hospital-all-in-one-production.up.railway.app';
+    });
 
     // Surgery Type Form State
     const [surgeryForm, setSurgeryForm] = useState({
@@ -68,15 +75,26 @@ export const SettingsManager = () => {
         alert('병원 정보가 수정되었습니다.');
     };
 
+    const handleUpdateApiUrl = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!apiUrl) return;
+        // Strip trailing slash
+        const cleanUrl = apiUrl.replace(/\/$/, '');
+        localStorage.setItem('custom_api_url', cleanUrl);
+        alert('API 주소가 저장되었습니다. 페이지를 새로고침합니다.');
+        window.location.reload();
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Header / Tabs */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="flex border-b border-slate-100">
-                    <button onClick={() => setActiveTab('HOSPITAL')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'HOSPITAL' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏢 병원 정보</button>
-                    <button onClick={() => setActiveTab('DEPT')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'DEPT' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏥 진료과 관리</button>
-                    <button onClick={() => setActiveTab('DOCTOR')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'DOCTOR' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>👨‍⚕️ 의료진(의사) 관리</button>
-                    <button onClick={() => setActiveTab('SURGERY')} className={`flex-1 py-4 font-bold text-sm ${activeTab === 'SURGERY' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🩺 수술/시술 항목 관리</button>
+                <div className="flex border-b border-slate-100 overflow-x-auto">
+                    <button onClick={() => setActiveTab('HOSPITAL')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'HOSPITAL' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏢 병원 정보</button>
+                    <button onClick={() => setActiveTab('DEPT')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'DEPT' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🏥 진료과</button>
+                    <button onClick={() => setActiveTab('DOCTOR')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'DOCTOR' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>👨‍⚕️ 의료진</button>
+                    <button onClick={() => setActiveTab('SURGERY')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'SURGERY' ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-500' : 'text-slate-500 hover:bg-slate-50'}`}>🩺 수술관리</button>
+                    <button onClick={() => setActiveTab('SYSTEM')} className={`flex-1 min-w-[100px] py-4 font-bold text-sm whitespace-nowrap ${activeTab === 'SYSTEM' ? 'bg-slate-800 text-white border-b-2 border-slate-600' : 'text-slate-500 hover:bg-slate-50'}`}>🔌 시스템 연결</button>
                 </div>
 
                 <div className="p-8">
@@ -110,7 +128,7 @@ export const SettingsManager = () => {
                             ) : (
                                 <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                                     <p className="text-slate-500 mb-2">등록된 병원 정보가 없습니다.</p>
-                                    <p className="text-xs text-slate-400">진료과를 먼저 생성하면 자동으로 기본 병원이 생성됩니다.</p>
+                                    <p className="text-xs text-slate-400">시스템 연결이 올바른지 확인해주세요. (시스템 연결 탭)</p>
                                 </div>
                             )}
                         </div>
@@ -273,6 +291,48 @@ export const SettingsManager = () => {
                                         </li>
                                     ))}
                                 </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- SYSTEM CONNECTION TAB --- */}
+                    {activeTab === 'SYSTEM' && (
+                        <div className="max-w-xl mx-auto">
+                            <h3 className="font-bold text-lg mb-2">🔌 백엔드 서버 연결 설정</h3>
+                            <p className="text-sm text-slate-500 mb-6">
+                                어드민 웹이 통신할 백엔드 API 서버 주소를 설정합니다.<br />
+                                통계 데이터가 보이지 않거나 연결 오류 발생 시 이 주소를 확인하세요.
+                            </p>
+
+                            <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border border-slate-700">
+                                <form onSubmit={handleUpdateApiUrl} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Backend API Endpoint</label>
+                                        <input
+                                            type="text"
+                                            placeholder="https://your-backend.up.railway.app"
+                                            value={apiUrl}
+                                            onChange={e => setApiUrl(e.target.value)}
+                                            className="w-full bg-slate-800 border border-slate-600 p-4 rounded-lg outline-none focus:border-indigo-500 text-sm font-mono text-emerald-400"
+                                        />
+                                        <p className="text-[10px] text-slate-500 mt-2">
+                                            * 주의: 'https://' 로 시작해야 하며, 끝에 '/'가 없어야 합니다.<br />
+                                            * 설정 저장 시 브라우저 로컬 저장소(Local Storage)에 영구 저장됩니다.
+                                        </p>
+                                    </div>
+                                    <div className="pt-2">
+                                        <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-lg font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                                            <span>💾</span> 설정 저장 및 새로고침
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <div className="mt-8 pt-6 border-t border-slate-700">
+                                    <h4 className="font-bold text-sm mb-2 text-slate-300">Default URL (Fallback)</h4>
+                                    <div className="bg-black/30 p-3 rounded font-mono text-xs text-slate-500 break-all">
+                                        https://hospital-all-in-one-production.up.railway.app
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
