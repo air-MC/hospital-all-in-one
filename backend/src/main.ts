@@ -7,9 +7,15 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     app.enableCors({
-      origin: '*',
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      origin: [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://hospital-admin-tau.vercel.app', // Explicit Vercel Domain
+        /^https:\/\/.*\.vercel\.app$/ // Allow Vercel preview deployments
+      ],
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
       credentials: true,
+      allowedHeaders: 'Content-Type, Accept, Authorization',
     });
 
     // Simple request logger
