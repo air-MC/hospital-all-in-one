@@ -84,7 +84,8 @@ export const PatientManager = () => {
         name: '',
         phone: '',
         birthDate: '',
-        gender: 'M'
+        gender: 'M',
+        patientNo: ''
     });
 
     // ... (rest of previous code remains same, but let's insert the update functions)
@@ -113,7 +114,8 @@ export const PatientManager = () => {
             name: selectedPatient.name,
             phone: selectedPatient.phone,
             birthDate: DateTime.fromISO(selectedPatient.birthDate).toFormat('yyyy-MM-dd'),
-            gender: selectedPatient.gender
+            gender: selectedPatient.gender,
+            patientNo: selectedPatient.patientNo || ''
         });
         setIsEditing(true);
     };
@@ -132,7 +134,17 @@ export const PatientManager = () => {
                     <div className="p-8 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                         {isEditing ? (
                             <form onSubmit={handleUpdatePatient} className="flex-1 flex flex-wrap gap-4 items-end">
-                                <div className="flex-1 min-w-[200px]">
+                                <div className="flex-1 min-w-[150px]">
+                                    <label className="block text-[10px] font-bold text-slate-400 mb-1">환자 등록번호</label>
+                                    <input
+                                        type="text"
+                                        value={editData.patientNo}
+                                        onChange={e => setEditData({ ...editData, patientNo: e.target.value })}
+                                        className="w-full border-2 border-indigo-100 p-2 rounded-lg outline-none focus:border-indigo-500 font-bold bg-white"
+                                        placeholder="등록번호 직접 지정"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-[150px]">
                                     <label className="block text-[10px] font-bold text-slate-400 mb-1">이름</label>
                                     <input
                                         type="text"

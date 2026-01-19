@@ -151,34 +151,58 @@ export const SlotManager = () => {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {slots.map((slot: any) => {
-                            const startTime = DateTime.fromISO(slot.startDateTime).toFormat('HH:mm');
-                            const isFull = slot.bookedCount >= slot.capacity || slot.status === 'FULL' || slot.status === 'CLOSED' || slot.status === 'BLOCKED';
-                            const isClosed = slot.status === 'CLOSED' || slot.status === 'BLOCKED';
-                            const hasBookings = slot.bookedCount > 0;
+                    <div className="space-y-6">
+                        {(() => {
+                            if (!slots || slots.length === 0) return null;
 
-                            return (
-                                <div
-                                    key={slot.id}
-                                    onClick={() => handleToggleStatus(slot.id, slot.status)}
-                                    className={clsx(
-                                        "p-2 rounded-lg border text-center transition cursor-pointer hover:shadow-md",
-                                        isClosed ? "bg-slate-100 border-slate-200 opacity-50 grayscale" :
-                                            isFull ? "bg-red-50 border-red-100" :
-                                                hasBookings ? "bg-indigo-50 border-indigo-100" :
-                                                    "bg-white border-slate-100 hover:border-indigo-400"
-                                    )}
-                                >
-                                    <div className="text-xs font-bold text-slate-700 mb-1">{startTime}</div>
-                                    <div className="text-[10px] font-bold">
-                                        <span className={isFull ? "text-red-500" : hasBookings ? "text-indigo-600" : "text-slate-400"}>
-                                            {isClosed ? '마감' : `${slot.bookedCount}/${slot.capacity}`}
-                                        </span>
+                            // Grouping logic
+                            const groups: Record<string, { doctorName: string, slots: any[] }> = {};
+                            slots.forEach((s: any) => {
+                                const did = s.doctorId || 'default';
+                                const dname = s.doctor?.name || '미지정/기본';
+                                if (!groups[did]) groups[did] = { doctorName: dname, slots: [] };
+                                groups[did].slots.push(s);
+                            });
+
+                            return Object.entries(groups).map(([did, group]) => (
+                                <div key={did} className="animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div className="flex items-center gap-2 mb-2 border-b border-slate-50 pb-1">
+                                        <div className="w-1.5 h-4 bg-indigo-500 rounded-full"></div>
+                                        <span className="text-xs font-black text-slate-800">{group.doctorName} 원장님</span>
+                                        <span className="text-[10px] text-slate-400 font-bold ml-auto">{group.slots.length}개 슬롯</span>
+                                    </div>
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                        {group.slots.map((slot: any) => {
+                                            const startTime = DateTime.fromISO(slot.startDateTime).toFormat('HH:mm');
+                                            const isFull = slot.bookedCount >= slot.capacity || slot.status === 'FULL' || slot.status === 'CLOSED' || slot.status === 'BLOCKED';
+                                            const isClosed = slot.status === 'CLOSED' || slot.status === 'BLOCKED';
+                                            const hasBookings = slot.bookedCount > 0;
+
+                                            return (
+                                                <div
+                                                    key={slot.id}
+                                                    onClick={() => handleToggleStatus(slot.id, slot.status)}
+                                                    className={clsx(
+                                                        "p-2 rounded-lg border text-center transition cursor-pointer hover:shadow-md",
+                                                        isClosed ? "bg-slate-100 border-slate-200 opacity-50 grayscale" :
+                                                            isFull ? "bg-red-50 border-red-100" :
+                                                                hasBookings ? "bg-indigo-50 border-indigo-100 shadow-sm ring-1 ring-indigo-200" :
+                                                                    "bg-white border-slate-100 hover:border-indigo-400"
+                                                    )}
+                                                >
+                                                    <div className="text-xs font-bold text-slate-700 mb-1">{startTime}</div>
+                                                    <div className="text-[10px] font-bold">
+                                                        <span className={isFull ? "text-red-500" : hasBookings ? "text-indigo-600" : "text-slate-400"}>
+                                                            {isClosed ? '마감' : `${slot.bookedCount}/${slot.capacity}`}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            );
-                        })}
+                            ));
+                        })()}
                     </div>
                 </div>
 

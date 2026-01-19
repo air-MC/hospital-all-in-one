@@ -20,6 +20,50 @@ const STEP_TEMPLATES = [
     { name: '진료실 방문', location: '2층 내과 1진료실', category: 'NOTICE' },
 ];
 
+const TodayAppointments = ({ onSelect, selectedId }: { onSelect: (p: any) => void, selectedId?: string }) => {
+    const todayStr = DateTime.now().toFormat('yyyy-MM-dd');
+    const { data: appointments, isLoading } = useSWR(`${API_URL}/booking/appointments?date=${todayStr}`, fetcher);
+
+    if (isLoading) return <div className="p-4 bg-white rounded-3xl border border-slate-200 animate-pulse h-20"></div>;
+
+    const patients = Array.from(new Map(appointments?.map((a: any) => [a.patient.id, a.patient])).values());
+
+    return (
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[280px]">
+            <h2 className="text-xs font-black text-slate-400 mb-4 uppercase tracking-widest flex items-center justify-between">
+                <span>📅 오늘 예약자 명단</span>
+                <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px]">{patients.length}명</span>
+            </h2>
+            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+                {patients.length === 0 ? (
+                    <p className="text-[10px] text-slate-400 italic text-center py-8">오늘 예약된 환자가 없습니다.</p>
+                ) : (
+                    patients.map((p: any) => (
+                        <button
+                            key={p.id}
+                            onClick={() => onSelect(p)}
+                            className={clsx(
+                                "w-full p-3 rounded-xl border-2 transition-all flex items-center gap-3 text-left",
+                                selectedId === p.id ? "border-indigo-500 bg-indigo-50 shadow-sm" : "border-slate-50 bg-slate-50 hover:border-slate-200"
+                            )}
+                        >
+                            <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center font-black text-xs",
+                                selectedId === p.id ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-500"
+                            )}>
+                                {p.name[0]}
+                            </div>
+                            <div>
+                                <div className="font-black text-xs text-slate-800">{p.name}</div>
+                                <div className="text-[8px] text-slate-400 font-bold">{p.phone}</div>
+                            </div>
+                        </button>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+};
+
 export const VisitGuideManager = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPatient, setSelectedPatient] = useState<any>(null);
@@ -133,6 +177,9 @@ export const VisitGuideManager = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Today's Appointments Summary */}
+                <TodayAppointments onSelect={setSelectedPatient} selectedId={selectedPatient?.id} />
 
                 {selectedPatient && (
                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex-1 overflow-y-auto custom-scrollbar">

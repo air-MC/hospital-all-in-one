@@ -33,7 +33,8 @@ export class BookingService {
                 startDateTime: true,
                 status: true,
                 bookedCount: true,
-                capacity: true
+                capacity: true,
+                doctor: { select: { name: true } }
             }
         });
     }

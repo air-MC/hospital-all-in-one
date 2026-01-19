@@ -250,6 +250,7 @@ export class HospitalService {
         }
         if (data.birthDate) updateData.birthDate = new Date(data.birthDate);
         if (data.gender) updateData.gender = data.gender;
+        if ((data as any).patientNo) updateData.patientNo = (data as any).patientNo;
 
         console.log(`[HospitalService] Updating patient ${id}:`, updateData);
 
