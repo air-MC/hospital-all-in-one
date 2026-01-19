@@ -24,7 +24,10 @@ export class BookingController {
      */
     @Post('slots/generate')
     async generateSlots(@Body() dto: GenerateSlotsDto) {
-        const date = new Date(dto.date);
+        // Parse YYYY-MM-DD manually to avoid timezone shifts
+        const [year, month, day] = dto.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+
         if (isNaN(date.getTime())) {
             throw new BadRequestException('Invalid date format');
         }
@@ -37,12 +40,17 @@ export class BookingController {
     @Get('slots')
     async getSlots(
         @Query('departmentId') departmentId: string,
-        @Query('date') date: string,
+        @Query('date') dateStr: string,
         @Query('doctorId') doctorId?: string
     ) {
-        if (!departmentId || !date) {
+        if (!departmentId || !dateStr) {
             throw new BadRequestException('departmentId and date are required');
         }
+        // Consistent parsing
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        if (isNaN(date.getTime())) throw new BadRequestException('Invalid date');
+
         return this.bookingService.getAvailableSlots(departmentId, date, doctorId);
     }
 
@@ -52,9 +60,14 @@ export class BookingController {
     @Get('appointments')
     async getAppointments(
         @Query('departmentId') departmentId?: string,
-        @Query('date') date?: string,
+        @Query('date') dateStr?: string,
         @Query('doctorId') doctorId?: string
     ) {
+        let date: Date | undefined;
+        if (dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            date = new Date(y, m - 1, d);
+        }
         return this.bookingService.getAppointments(departmentId, date, doctorId);
     }
 

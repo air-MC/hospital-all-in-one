@@ -7,8 +7,7 @@ import { addMinutes, startOfDay, endOfDay, isBefore } from 'date-fns';
 export class BookingService {
     constructor(private prisma: PrismaService) { }
 
-    async getAvailableSlots(departmentId: string, dateStr: string, doctorId?: string) {
-        const date = new Date(dateStr);
+    async getAvailableSlots(departmentId: string, date: Date, doctorId?: string) {
         const start = startOfDay(date);
         const end = endOfDay(date);
 
@@ -36,16 +35,39 @@ export class BookingService {
 
     async generateDailySlots(departmentId: string, date: Date, doctorId?: string) {
         const dayOfWeek = date.getDay();
+        console.log(`[BookingService] Generating slots for Dept: ${departmentId}, Date: ${date.toISOString()}, DayOfWeek: ${dayOfWeek}`);
+
         const rule = await this.prisma.scheduleRule.findFirst({
             where: { departmentId, dayOfWeek }
         });
 
-        if (!rule || rule.isHoliday) {
-            return { count: 0, message: 'Holiday or no rules' };
+        if (!rule) {
+            console.error(`[BookingService] No ScheduleRule found for Dept: ${departmentId}, DayOfWeek: ${dayOfWeek}`);
+            throw new NotFoundException(`해당 요일(${dayOfWeek})의 근무 규칙이 설정되지 않았습니다.`);
+        }
+
+        if (rule.isHoliday) {
+            return { count: 0, message: 'Holiday' };
         }
 
         const start = startOfDay(date);
         const end = endOfDay(date);
+
+        // Check for existing appointments before deleting slots
+        const appointmentsCount = await this.prisma.appointment.count({
+            where: {
+                slot: {
+                    departmentId,
+                    ...(doctorId ? { doctorId } : {}),
+                    startDateTime: { gte: start, lte: end }
+                }
+            }
+        });
+
+        if (appointmentsCount > 0) {
+            throw new ConflictException(`이미 예약이 ${appointmentsCount}건 존재하여 슬롯을 다시 생성할 수 없습니다.`);
+        }
+
         await this.prisma.slot.deleteMany({
             where: {
                 departmentId,
@@ -77,6 +99,7 @@ export class BookingService {
             currentTime = addMinutes(currentTime, rule.slotDuration);
         }
 
+        console.log(`[BookingService] Creating ${slotsToCreate.length} slots...`);
         await this.prisma.slot.createMany({ data: slotsToCreate });
         return { count: slotsToCreate.length };
     }
@@ -150,10 +173,9 @@ export class BookingService {
         });
     }
 
-    async getAppointments(departmentId?: string, dateStr?: string, doctorId?: string) {
+    async getAppointments(departmentId?: string, date?: Date, doctorId?: string) {
         const whereClause: any = {};
-        if (dateStr && dateStr !== '') {
-            const date = new Date(dateStr);
+        if (date) {
             const start = startOfDay(date);
             const end = endOfDay(date);
             whereClause.slot = { startDateTime: { gte: start, lte: end } };

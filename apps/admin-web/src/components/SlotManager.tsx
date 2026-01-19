@@ -44,8 +44,11 @@ export const SlotManager = () => {
             await generateSlots(selectedDept, selectedDate, selectedDoctor);
             alert('✅ 슬롯이 생성되었습니다.');
             refreshSlots();
-        } catch (e) {
-            alert('슬롯 생성 실패 (오류 발생)');
+        } catch (error: any) {
+            console.error('[Slot Generation Error]', error);
+            const status = error.response?.status;
+            const message = error.response?.data?.message || error.message;
+            alert(`슬롯 생성 실패 (${status}): ${message}`);
         } finally {
             setGenerating(false);
         }
