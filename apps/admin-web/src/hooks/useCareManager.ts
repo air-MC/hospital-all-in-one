@@ -78,3 +78,11 @@ export const searchPatients = async (query: string) => {
 export const registerPatient = async (data: { name: string, phone: string, birthDate: string, gender: string }) => {
     return axios.post(`${API_URL}/hospital/register`, data);
 };
+// --- Booking Management ---
+export const getPatientAppointments = async (patientId: string) => {
+    return axios.get(`${API_URL}/booking/appointments?patientId=${patientId}`).then(res => res.data);
+};
+
+export const cancelAppointment = async (appointmentId: string) => {
+    return axios.patch(`${API_URL}/booking/appointments/${appointmentId}/status`, { status: 'CANCELLED' });
+};

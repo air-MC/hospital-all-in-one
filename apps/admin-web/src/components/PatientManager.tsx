@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { searchPatients, registerPatient } from '../hooks/useCareManager';
+import { searchPatients, registerPatient, getPatientAppointments, cancelAppointment } from '../hooks/useCareManager';
 import { DateTime } from 'luxon';
 import clsx from 'clsx';
 
@@ -8,6 +8,8 @@ export const PatientManager = () => {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isRegistering, setIsRegistering] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+    const [appointments, setAppointments] = useState<any[]>([]);
 
     // Registration Form State
     const [formData, setFormData] = useState({
@@ -23,8 +25,6 @@ export const PatientManager = () => {
             try {
                 // If search term is short, we fetch "recent patients" by sending empty string
                 const query = searchTerm.length >= 1 ? searchTerm : '';
-                // Only skip if user is typing and length is 1 (too ambiguous?) - actually good to just debounce
-                // Let's just fetch.
                 const results = await searchPatients(query);
                 setSearchResults(results);
             } catch (e) {
@@ -35,6 +35,33 @@ export const PatientManager = () => {
         const timer = setTimeout(fetchPatients, 300);
         return () => clearTimeout(timer);
     }, [searchTerm]);
+
+    // Fetch appointments when a patient is selected
+    useEffect(() => {
+        if (selectedPatient) {
+            fetchAppointments(selectedPatient.id);
+        }
+    }, [selectedPatient]);
+
+    const fetchAppointments = async (patientId: string) => {
+        try {
+            const data = await getPatientAppointments(patientId);
+            setAppointments(data);
+        } catch (e) {
+            console.error("Failed to fetch appointments", e);
+        }
+    };
+
+    const handleCancelAppointment = async (apptId: string) => {
+        if (!confirm('정말 이 예약을 취소하시겠습니까?\n취소된 예약 슬롯은 다시 오픈됩니다.')) return;
+        try {
+            await cancelAppointment(apptId);
+            alert('✅ 예약이 취소되었습니다.');
+            if (selectedPatient) fetchAppointments(selectedPatient.id);
+        } catch (e: any) {
+            alert(`❌ 취소 실패: ${e.response?.data?.message || e.message}`);
+        }
+    };
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,6 +78,115 @@ export const PatientManager = () => {
             setIsLoading(false);
         }
     };
+
+    if (selectedPatient) {
+        return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <button
+                    onClick={() => setSelectedPatient(null)}
+                    className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold mb-4 transition-colors"
+                >
+                    <span>←</span> 환자 목록으로 돌아가기
+                </button>
+
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="p-8 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-3xl shadow-inner">
+                                {selectedPatient.name[0]}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h2 className="text-2xl font-bold text-slate-800">{selectedPatient.name}</h2>
+                                    <span className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-xs font-mono font-bold">
+                                        {selectedPatient.patientNo}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-slate-500 text-sm font-medium">
+                                    <span>{selectedPatient.phone}</span>
+                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                    <span>{DateTime.fromISO(selectedPatient.birthDate).toFormat('yyyy.MM.dd')}</span>
+                                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                    <span>{selectedPatient.gender === 'M' ? '남성' : '여성'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow hover:bg-indigo-700 transition">
+                                ✏️ 정보 수정
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-8">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <span className="bg-teal-100 text-teal-700 p-1 rounded">📅</span> 예약 및 진료 내역
+                        </h3>
+
+                        {appointments.length === 0 ? (
+                            <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-xl">
+                                <p className="text-slate-400 mb-2">예약 내역이 없습니다.</p>
+                                <button className="text-sm text-indigo-600 font-bold hover:underline">
+                                    + 새 예약 잡기
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {appointments.map((appt: any) => {
+                                    const isUpcoming = appt.status === 'BOOKED' || appt.status === 'CHECKED_IN';
+                                    const isCancelled = appt.status === 'CANCELLED';
+
+                                    return (
+                                        <div key={appt.id} className={clsx(
+                                            "p-5 rounded-xl border flex justify-between items-center transition-all",
+                                            isCancelled ? "bg-slate-50 border-slate-100 opacity-60" : "bg-white border-slate-200 hover:border-indigo-300 hover:shadow-md"
+                                        )}>
+                                            <div className="flex gap-6 items-center">
+                                                <div className={clsx(
+                                                    "flex flex-col items-center justify-center w-16 h-16 rounded-xl border",
+                                                    isCancelled ? "bg-slate-100 border-slate-200 text-slate-400" : "bg-teal-50 border-teal-200 text-teal-700"
+                                                )}>
+                                                    <span className="text-xs font-bold uppercase">{DateTime.fromISO(appt.slot.startDateTime).toFormat('MMM')}</span>
+                                                    <span className="text-xl font-bold">{DateTime.fromISO(appt.slot.startDateTime).toFormat('dd')}</span>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-bold text-slate-700 text-lg">
+                                                            {DateTime.fromISO(appt.slot.startDateTime).toFormat('HH:mm')}
+                                                        </span>
+                                                        <span className={clsx(
+                                                            "text-[10px] px-2 py-0.5 rounded font-bold uppercase",
+                                                            appt.status === 'BOOKED' ? "bg-blue-100 text-blue-600" :
+                                                                appt.status === 'CANCELLED' ? "bg-slate-200 text-slate-500" :
+                                                                    "bg-green-100 text-green-600"
+                                                        )}>
+                                                            {appt.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-sm text-slate-500">
+                                                        {appt.slot.department?.name} • {appt.slot.doctor?.name || '의료진 미지정'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {isUpcoming && (
+                                                <button
+                                                    onClick={() => handleCancelAppointment(appt.id)}
+                                                    className="px-3 py-1.5 rounded border border-red-200 text-red-500 text-xs font-bold hover:bg-red-50 transition"
+                                                >
+                                                    예약 취소
+                                                </button>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -202,7 +338,12 @@ export const PatientManager = () => {
                                                     </span>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">상세보기</button>
+                                                    <button
+                                                        onClick={() => setSelectedPatient(p)}
+                                                        className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    >
+                                                        상세보기
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

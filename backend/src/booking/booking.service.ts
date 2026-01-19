@@ -191,8 +191,12 @@ export class BookingService {
         });
     }
 
-    async getAppointments(departmentId?: string, date?: Date, doctorId?: string) {
+    async getAppointments(departmentId?: string, date?: Date, doctorId?: string, patientId?: string) {
         const whereClause: any = {};
+
+        if (patientId) {
+            whereClause.patientId = patientId;
+        }
         if (date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -237,7 +241,7 @@ export class BookingService {
                     where: { id: appt.slotId },
                     data: {
                         bookedCount: { decrement: 1 },
-                        status: 'OPEN'
+                        status: 'OPEN' // Always reopen if cancelled
                     }
                 });
             }

@@ -61,14 +61,14 @@ export class BookingController {
     async getAppointments(
         @Query('departmentId') departmentId?: string,
         @Query('date') dateStr?: string,
-        @Query('doctorId') doctorId?: string
+        @Query('doctorId') doctorId?: string,
+        @Query('patientId') patientId?: string
     ) {
         let date: Date | undefined;
         if (dateStr) {
             const [y, m, d] = dateStr.split('-').map(Number);
-            date = new Date(y, m - 1, d);
         }
-        return this.bookingService.getAppointments(departmentId, date, doctorId);
+        return this.bookingService.getAppointments(departmentId, date, doctorId, patientId);
     }
 
     @Patch('appointments/:id/status')
