@@ -140,6 +140,25 @@ export const SuperAdminPage = () => {
                                     >
                                         🔑 관리자 계정 발급
                                     </button>
+                                    {!hospital.isMain && (
+                                        <button
+                                            onClick={async () => {
+                                                if (!confirm(`정말로 "${hospital.name}"을(를) 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없으며, 해당 병원의 모든 데이터(환자, 의료진, 예약 등)가 영구 삭제됩니다.`)) {
+                                                    return;
+                                                }
+                                                try {
+                                                    await axios.post(`${API_URL}/hospital/delete`, { hospitalId: hospital.id });
+                                                    alert('✅ 병원이 삭제되었습니다.');
+                                                    mutate();
+                                                } catch (e: any) {
+                                                    alert(e.response?.data?.message || '삭제 실패');
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-white border-2 border-rose-200 text-rose-600 rounded-xl text-xs font-bold hover:border-rose-500 hover:bg-rose-50 transition-all"
+                                        >
+                                            🗑️ 삭제
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))

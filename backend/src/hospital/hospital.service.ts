@@ -384,4 +384,30 @@ export class HospitalService {
             }
         });
     }
+
+    async deleteHospital(hospitalId: string) {
+        // Prevent deletion of main hospital
+        const hospital = await this.prisma.hospital.findUnique({
+            where: { id: hospitalId }
+        });
+
+        if (!hospital) {
+            throw new Error('Hospital not found');
+        }
+
+        if (hospital.isMain) {
+            throw new Error('Cannot delete main hospital');
+        }
+
+        // Delete all related data in correct order (to avoid foreign key constraints)
+        await this.prisma.user.deleteMany({ where: { hospitalId } });
+        await this.prisma.doctor.deleteMany({ where: { hospitalId } });
+        await this.prisma.department.deleteMany({ where: { hospitalId } });
+        await this.prisma.patient.deleteMany({ where: { hospitalId } });
+
+        // Finally delete the hospital
+        return this.prisma.hospital.delete({
+            where: { id: hospitalId }
+        });
+    }
 }

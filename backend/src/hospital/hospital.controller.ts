@@ -95,4 +95,9 @@ export class HospitalController {
     async createHospitalAdmin(@Body() body: { hospitalId: string, username: string, name: string, password?: string }) {
         return this.hospitalService.createHospitalAdmin(body.hospitalId, body);
     }
+
+    @Post('delete')
+    async deleteHospital(@Body() body: { hospitalId: string }) {
+        return this.hospitalService.deleteHospital(body.hospitalId);
+    }
 }
