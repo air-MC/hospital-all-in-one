@@ -197,8 +197,11 @@ export const SettingsManager = () => {
                                     {doctors?.map((d: any) => (
                                         <li key={d.id} className="flex justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">{d.name[0]}</div>
-                                                <span className="font-bold text-slate-700">{d.name}</span>
+                                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">{d.name?.[0] || 'D'}</div>
+                                                <div>
+                                                    <div className="font-bold text-slate-700">{d.name}</div>
+                                                    <div className="text-[10px] text-slate-400">{d.department?.name || '소속 없음'}</div>
+                                                </div>
                                             </div>
                                             <span className="text-xs text-slate-500 flex items-center">
                                                 ID: {d.id.slice(0, 8)}...

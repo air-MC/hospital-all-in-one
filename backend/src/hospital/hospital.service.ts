@@ -13,9 +13,12 @@ export class HospitalService {
         });
     }
 
-    async getDoctors(departmentId: string) {
+    async getDoctors(departmentId?: string) {
         return this.prisma.doctor.findMany({
-            where: { departmentId }
+            where: departmentId ? { departmentId } : {},
+            include: {
+                department: true
+            }
         });
     }
 
