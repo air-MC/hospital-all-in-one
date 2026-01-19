@@ -59,3 +59,7 @@ export const useAppointments = (departmentId?: string, date?: Date, doctorId?: s
 export const checkInAppointment = async (id: string) => {
     return axios.patch(`${API_URL}/booking/appointments/${id}/status`, { status: 'CHECKED_IN' });
 };
+
+export const updateSlotStatus = async (id: string, status: string) => {
+    return axios.patch(`${API_URL}/booking/slots/${id}/status`, { status });
+};

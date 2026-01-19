@@ -129,4 +129,12 @@ export class BookingController {
     async markNotificationRead(@Param('id') id: string) {
         return this.bookingService.markNotificationRead(id);
     }
+
+    @Patch('slots/:id/status')
+    async updateSlotStatus(
+        @Param('id') id: string,
+        @Body('status') status: any
+    ) {
+        return this.bookingService.updateSlotStatus(id, status);
+    }
 }

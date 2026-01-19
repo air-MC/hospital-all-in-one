@@ -475,4 +475,10 @@ export class BookingService {
             data: { isRead: true }
         });
     }
+    async updateSlotStatus(id: string, status: SlotStatus) {
+        return this.prisma.slot.update({
+            where: { id },
+            data: { status }
+        });
+    }
 }

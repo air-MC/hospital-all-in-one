@@ -2,7 +2,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { DateTime } from 'luxon';
 import clsx from 'clsx';
-import { useSlots, generateSlots, getDepartments, getDoctors, useAppointments, checkInAppointment } from '../hooks/useSlotManager';
+import { useSlots, generateSlots, getDepartments, getDoctors, useAppointments, checkInAppointment, updateSlotStatus } from '../hooks/useSlotManager';
 
 
 export const SlotManager = () => {
@@ -70,9 +70,19 @@ export const SlotManager = () => {
         }
     };
 
-    const handleToggleStatus = async (_slotId: string, currentStatus: string) => {
-        if (!confirm(currentStatus === 'OPEN' ? '슬롯을 예약 마감(CLOSE) 하시겠습니까?' : '슬롯을 다시 오픈(OPEN) 하시겠습니까?')) return;
-        alert("기능 구현 중입니다. (Backend endpoint required)");
+    const handleToggleStatus = async (slotId: string, currentStatus: string) => {
+        const isClosing = currentStatus === 'OPEN';
+        const newStatus = isClosing ? 'BLOCKED' : 'OPEN';
+
+        if (!confirm(isClosing ? '슬롯을 예약 마감(BLOCK) 하시겠습니까?' : '슬롯을 다시 오픈(OPEN) 하시겠습니까?')) return;
+
+        try {
+            await updateSlotStatus(slotId, newStatus);
+            alert(`✅ 슬롯이 ${isClosing ? '마감' : '오픈'}되었습니다.`);
+            refreshSlots();
+        } catch (e) {
+            alert('슬롯 상태 변경 실패');
+        }
     };
 
     return (
@@ -144,8 +154,8 @@ export const SlotManager = () => {
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {slots.map((slot: any) => {
                             const startTime = DateTime.fromISO(slot.startDateTime).toFormat('HH:mm');
-                            const isFull = slot.bookedCount >= slot.capacity || slot.status === 'FULL' || slot.status === 'CLOSED';
-                            const isClosed = slot.status === 'CLOSED';
+                            const isFull = slot.bookedCount >= slot.capacity || slot.status === 'FULL' || slot.status === 'CLOSED' || slot.status === 'BLOCKED';
+                            const isClosed = slot.status === 'CLOSED' || slot.status === 'BLOCKED';
                             const hasBookings = slot.bookedCount > 0;
 
                             return (

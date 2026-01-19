@@ -547,7 +547,7 @@ export const CarePlanEditor = ({ surgery, onClose }: { surgery: any, onClose?: (
                     <div className="flex flex-col items-end gap-2">
                         {/* Status Controls */}
                         <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-                            {['SCHEDULED', 'PRE_OP', 'SURGERY', 'RECOVERY', 'WARD', 'DISCHARGED'].map(st => (
+                            {['CONFIRMED', 'ADMITTED', 'IN_SURGERY', 'POST_OP', 'DISCHARGED'].map(st => (
                                 <button
                                     key={st}
                                     onClick={() => handleStatusUpdate(st)}
@@ -559,11 +559,10 @@ export const CarePlanEditor = ({ surgery, onClose }: { surgery: any, onClose?: (
                                             : "text-slate-400 hover:text-slate-600 hover:bg-slate-200"
                                     )}
                                 >
-                                    {st === 'SCHEDULED' ? '예정' :
-                                        st === 'PRE_OP' ? '수술준비' :
-                                            st === 'SURGERY' ? '수술중' :
-                                                st === 'RECOVERY' ? '회복실' :
-                                                    st === 'WARD' ? '병동' : '퇴원'}
+                                    {st === 'CONFIRMED' ? '예정' :
+                                        st === 'ADMITTED' ? '입원/준비' :
+                                            st === 'IN_SURGERY' ? '수술중' :
+                                                st === 'POST_OP' ? '회복/경과' : '퇴원'}
                                 </button>
                             ))}
                         </div>
