@@ -142,17 +142,19 @@ async function main() {
     const allDepts = await prisma.department.findMany();
     for (const d of allDepts) {
         for (let day = 1; day <= 5; day++) { // Monday to Friday
+            // Explicitly cast to any to avoid strict type checking for nullable composite keys logic during seeding
             await (prisma.scheduleRule as any).upsert({
                 where: {
                     deptDoctorDayIndex: {
                         departmentId: d.id,
-                        doctorId: null,
+                        doctorId: null, // Explicit null
                         dayOfWeek: day
                     }
                 },
                 update: {},
                 create: {
                     departmentId: d.id,
+                    doctorId: null, // Explicit null for creation
                     dayOfWeek: day,
                     startTime: '09:00',
                     endTime: '18:00',
