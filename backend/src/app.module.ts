@@ -10,6 +10,7 @@ import { CareModule } from './care/care.module';
 
 import { HospitalModule } from './hospital/hospital.module';
 import { VisitGuideModule } from './visit-guide/visit-guide.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { VisitGuideModule } from './visit-guide/visit-guide.module';
     BookingModule,
     CareModule,
     HospitalModule,
-    VisitGuideModule
+    VisitGuideModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
