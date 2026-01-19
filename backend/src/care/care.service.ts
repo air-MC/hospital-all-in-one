@@ -392,6 +392,7 @@ export class CareService {
                 defaultStayDays: parseInt(data.defaultStayDays),
                 isPreOpExamRequired: data.isPreOpExamRequired,
                 hospitalId: hospital?.id || null, // [FIX] Linked
+                departmentId: data.departmentId || null,
                 isSystemDefault: false
             }
         });

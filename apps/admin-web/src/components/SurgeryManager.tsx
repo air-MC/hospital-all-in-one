@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { registerSurgery, getSurgeryTypes, getActiveSurgeries, searchPatients } from '../hooks/useCareManager';
+import { getDepartments, getDoctors } from '../hooks/useAdminSettings';
 import type { CreateSurgeryDto } from '../hooks/useCareManager';
 import { DateTime } from 'luxon';
 import useSWR from 'swr';
@@ -7,11 +8,14 @@ import clsx from 'clsx';
 // Removed CarePlanEditor import as it's not used here anymore
 
 export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any) => void }) => {
-    // Fetch Surgery Types
+    // Fetch Data
     const { data: surgeryTypes, error: typesError } = useSWR('surgery-types', getSurgeryTypes);
     const { data: activeSurgeries } = useSWR('active-surgeries', getActiveSurgeries, { refreshInterval: 5000 });
+    const { data: departments } = useSWR('departments', getDepartments);
+    const { data: doctors } = useSWR('doctors', () => getDoctors());
 
     // Form State
+    const [selectedDeptId, setSelectedDeptId] = useState<string>('');
     const [selectedTypeId, setSelectedTypeId] = useState<string>('');
     const [surgeryDateTime, setSurgeryDateTime] = useState(DateTime.now().plus({ days: 7 }).set({ hour: 9, minute: 0 }).toFormat("yyyy-MM-dd'T'HH:mm"));
 
@@ -22,7 +26,7 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
 
     const [formData, setFormData] = useState<CreateSurgeryDto>({
         patientId: '',
-        doctorId: 'doc_test_01',
+        doctorId: '',
         surgeryTypeId: '',
         surgeryDate: '',
         admissionDate: '',
@@ -198,37 +202,60 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                             </div>
                         </div>
 
-                        {/* Existing 2. Doctor Info (Simplified) */}
-                        <div className="grid grid-cols-1 bg-slate-50/50 p-4 rounded-xl border border-dashed border-slate-200">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs shrink-0">Dr</div>
-                                <div className="flex-1">
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">담당의 (Default)</label>
-                                    <div className="text-sm font-medium text-slate-700">관리자 (doc_test_01)</div>
-                                </div>
+                        {/* 2. Department & Doctor Selection */}
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="relative">
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">② 진료과 (Department)</label>
+                                <select
+                                    value={selectedDeptId}
+                                    onChange={(e) => {
+                                        setSelectedDeptId(e.target.value);
+                                        setFormData(prev => ({ ...prev, doctorId: '' })); // Reset doctor
+                                    }}
+                                    className="w-full bg-white border border-slate-300 rounded-lg p-3 shadow-sm outline-none focus:ring-2 focus:ring-slate-500"
+                                >
+                                    <option value="">-- 진료과 선택 --</option>
+                                    {departments?.map((d: any) => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="relative">
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wide">③ 담당의 (Doctor)</label>
+                                <select
+                                    value={formData.doctorId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, doctorId: e.target.value }))}
+                                    disabled={!selectedDeptId}
+                                    className="w-full bg-white border border-slate-300 rounded-lg p-3 shadow-sm outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-400"
+                                >
+                                    <option value="">-- 의사 선택 --</option>
+                                    {doctors?.filter((doc: any) => doc.departmentId === selectedDeptId).map((d: any) => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
-                        {/* 2. Surgery Type Selection */}
-                        <div className="relative">
-                            <label className="absolute -top-3 left-4 bg-white px-2 text-sm font-bold text-teal-600 z-10">① 수술/시술 종류 선택</label>
+                        {/* 3. Surgery Type Selection (Filtered) */}
+                        <div className={clsx("relative transition-all duration-500", !selectedDeptId ? "opacity-50 pointer-events-none" : "opacity-100")}>
+                            <label className="absolute -top-3 left-4 bg-white px-2 text-sm font-bold text-teal-600 z-10">④ 수술/시술 종류 선택</label>
                             <div className="p-6 border-2 border-teal-100 rounded-xl bg-teal-50/30 hover:border-teal-200 transition-colors">
                                 <select
                                     value={selectedTypeId}
                                     onChange={(e) => setSelectedTypeId(e.target.value)}
                                     className="w-full bg-white border border-slate-200 rounded-lg p-3 shadow-sm outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-lg font-medium"
                                 >
-                                    <option value="">-- 선택해주세요 --</option>
+                                    <option value="">-- 수술 종류 선택 ({surgeryTypes?.filter((t: any) => !t.departmentId || t.departmentId === selectedDeptId).length || 0}개) --</option>
                                     {!surgeryTypes ? (
                                         <option disabled>로딩 중...</option>
-                                    ) : surgeryTypes.length === 0 ? (
-                                        <option disabled>등록된 수술 종류가 없습니다.</option>
                                     ) : (
-                                        surgeryTypes.map((t: any) => (
-                                            <option key={t.id} value={t.id}>
-                                                {t.type === 'SURGERY' ? '🩺 수술' : '💊 시술'} - {t.name} (입원: {t.defaultStayDays}일)
-                                            </option>
-                                        ))
+                                        surgeryTypes
+                                            .filter((t: any) => !t.departmentId || t.departmentId === selectedDeptId)
+                                            .map((t: any) => (
+                                                <option key={t.id} value={t.id}>
+                                                    {t.type === 'SURGERY' ? '🩺 수술' : '💊 시술'} - {t.name} (입원: {t.defaultStayDays}일)
+                                                </option>
+                                            ))
                                     )}
                                 </select>
                             </div>
@@ -238,7 +265,7 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                         <div className={clsx("space-y-6 transition-all duration-500", !selectedTypeId ? "opacity-30 blur-sm pointer-events-none" : "opacity-100")}>
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">② 수술 예정 일시</label>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">⑤ 수술 예정 일시</label>
                                     <input
                                         type="datetime-local"
                                         value={surgeryDateTime}
@@ -248,7 +275,7 @@ export const SurgeryManager = ({ onSelectSurgery }: { onSelectSurgery?: (s: any)
                                 </div>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-2">③ 진단명</label>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">⑥ 진단명</label>
                                         <input
                                             type="text" name="diagnosis"
                                             value={formData.diagnosis} onChange={handleChange}

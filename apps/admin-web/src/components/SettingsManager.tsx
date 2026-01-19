@@ -30,6 +30,7 @@ export const SettingsManager = () => {
         id: '',
         name: '',
         type: 'SURGERY',
+        departmentId: '',
         isAdmissionRequired: true,
         defaultStayDays: 1,
         isPreOpExamRequired: true
@@ -59,7 +60,7 @@ export const SettingsManager = () => {
             await createSurgeryType(surgeryForm);
             mutate('surgery-types');
             setSurgeryForm({
-                id: '', name: '', type: 'SURGERY', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true
+                id: '', name: '', type: 'SURGERY', departmentId: '', isAdmissionRequired: true, defaultStayDays: 1, isPreOpExamRequired: true
             });
             alert('수술/시술 항목이 등록되었습니다.');
         } catch (e) {
@@ -215,13 +216,25 @@ export const SettingsManager = () => {
                             <div>
                                 <h3 className="font-bold text-lg mb-4">신규 수술/시술 항목 등록</h3>
                                 <form onSubmit={handleCreateSurgeryType} className="space-y-4">
-                                    <input
-                                        type="text"
-                                        placeholder="고유 ID (영어, 예: knee_replace)"
-                                        value={surgeryForm.id}
-                                        onChange={e => setSurgeryForm({ ...surgeryForm, id: e.target.value })}
-                                        className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
-                                    />
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="w-1/3 border p-3 rounded-lg outline-none"
+                                            value={surgeryForm.departmentId}
+                                            onChange={e => setSurgeryForm({ ...surgeryForm, departmentId: e.target.value })}
+                                        >
+                                            <option value="">(공통/전체)</option>
+                                            {departments?.map((d: any) => (
+                                                <option key={d.id} value={d.id}>{d.name}</option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="text"
+                                            placeholder="고유 ID (영어, 예: knee_replace)"
+                                            value={surgeryForm.id}
+                                            onChange={e => setSurgeryForm({ ...surgeryForm, id: e.target.value })}
+                                            className="flex-1 border p-3 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm"
+                                        />
+                                    </div>
                                     <input
                                         type="text"
                                         placeholder="수술명 (예: 무릎 연골 수술)"

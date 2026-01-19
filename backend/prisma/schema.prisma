@@ -242,6 +242,10 @@ model SurgeryType {
   // Master vs Custom Data
   hospitalId          String?  // Null means System Master
   hospital            Hospital? @relation(fields: [hospitalId], references: [id])
+  
+  departmentId        String?
+  department          Department? @relation(fields: [departmentId], references: [id])
+  
   isSystemDefault     Boolean  @default(false)
 
   surgeryCases        SurgeryCase[]
