@@ -23,6 +23,7 @@ export class HospitalService {
     }
 
     async findPatientByPhone(phone: string) {
+        if (!phone) return null;
         const normalized = phone.replace(/[^0-9]/g, '');
         console.log(`[HospitalService] Looking up patient. Input: ${phone}, Normalized: ${normalized}`);
 

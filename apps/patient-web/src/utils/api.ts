@@ -1,5 +1,11 @@
 
 export const getApiUrl = () => {
+    // 0. Manual Override from LocalStorage
+    if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('custom_api_url');
+        if (saved) return saved;
+    }
+
     // 1. Check for explicit environment variable first (Vercel/Railway Env)
     const envUrl = import.meta.env.VITE_API_URL;
     if (envUrl && envUrl !== 'http://localhost:3000' && envUrl !== '') {

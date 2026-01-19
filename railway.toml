@@ -1,8 +1,8 @@
 # Railway Config - Force Rebuild: 2026-01-19 15:28 (Doctor Schedule Schema Update)
 [build]
 builder = "NIXPACKS"
-buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
+buildCommand = "cd backend && npm install && npx prisma generate && npm run build && npx prisma db push --accept-data-loss"
 
 [deploy]
-startCommand = "echo '🚀 Starting Deployment...' && cd backend && npx prisma db push --accept-data-loss && node dist/main.js"
+startCommand = "echo '🚀 Starting Deployment...' && cd backend && node dist/main.js"
 healthCheckPath = "/"
