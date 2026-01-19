@@ -9,7 +9,8 @@ const API_URL = getApiUrl();
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export const Dashboard = () => {
-    const { data: stats, error, isLoading } = useSWR(`${API_URL}/booking/stats`, fetcher, {
+    // [FIX] Force explicit Production URL for clear verification
+    const { data: stats, error, isLoading } = useSWR(`https://hospital-all-in-one-production.up.railway.app/booking/stats`, fetcher, {
         refreshInterval: 5000,
         onError: (err) => console.error('[Dashboard] Stats fetch error:', err)
     });
