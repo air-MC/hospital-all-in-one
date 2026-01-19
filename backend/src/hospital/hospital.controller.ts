@@ -64,8 +64,12 @@ export class HospitalController {
         try {
             return await this.hospitalService.updateDepartmentSchedule(id, body);
         } catch (error: any) {
-            console.error('[HospitalController] updateDepartmentSchedule failed:', error);
-            throw error;
+            console.error('[HospitalController] updateDepartmentSchedule failed:', error.message);
+            return {
+                error: true,
+                message: error.message,
+                stack: error.stack
+            };
         }
     }
 
