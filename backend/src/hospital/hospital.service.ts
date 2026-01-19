@@ -143,37 +143,49 @@ export class HospitalService {
     }
 
     async updateDepartmentSchedule(departmentId: string, schedules: any[]) {
+        console.log(`[HospitalService] Updating schedules for Dept: ${departmentId}, Count: ${schedules.length}`);
         const results = [];
         for (const s of schedules) {
-            const rule = await this.prisma.scheduleRule.upsert({
-                where: {
-                    departmentDayIndex: {
+            try {
+                // Ensure valid integers, fallback to defaults if NaN/invalid
+                const slotDuration = Number(s.slotDuration) > 0 ? Number(s.slotDuration) : 30;
+                const capacityPerSlot = Number(s.capacityPerSlot) > 0 ? Number(s.capacityPerSlot) : 3;
+
+                console.log(`[HospitalService] Processing Day ${s.dayOfWeek}: Holiday=${s.isHoliday}, Duration=${slotDuration}, Cap=${capacityPerSlot}`);
+
+                const rule = await this.prisma.scheduleRule.upsert({
+                    where: {
+                        departmentDayIndex: {
+                            departmentId,
+                            dayOfWeek: s.dayOfWeek
+                        }
+                    },
+                    update: {
+                        startTime: s.startTime || '09:00',
+                        endTime: s.endTime || '18:00',
+                        breakStart: s.breakStart || null,
+                        breakEnd: s.breakEnd || null,
+                        isHoliday: Boolean(s.isHoliday),
+                        slotDuration: slotDuration,
+                        capacityPerSlot: capacityPerSlot
+                    },
+                    create: {
                         departmentId,
-                        dayOfWeek: s.dayOfWeek
+                        dayOfWeek: s.dayOfWeek,
+                        startTime: s.startTime || '09:00',
+                        endTime: s.endTime || '18:00',
+                        breakStart: s.breakStart || null,
+                        breakEnd: s.breakEnd || null,
+                        isHoliday: Boolean(s.isHoliday),
+                        slotDuration: slotDuration,
+                        capacityPerSlot: capacityPerSlot
                     }
-                },
-                update: {
-                    startTime: s.startTime,
-                    endTime: s.endTime,
-                    breakStart: s.breakStart,
-                    breakEnd: s.breakEnd,
-                    isHoliday: s.isHoliday,
-                    slotDuration: Number(s.slotDuration),
-                    capacityPerSlot: Number(s.capacityPerSlot)
-                },
-                create: {
-                    departmentId,
-                    dayOfWeek: s.dayOfWeek,
-                    startTime: s.startTime,
-                    endTime: s.endTime,
-                    breakStart: s.breakStart,
-                    breakEnd: s.breakEnd,
-                    isHoliday: s.isHoliday,
-                    slotDuration: Number(s.slotDuration) || 30,
-                    capacityPerSlot: Number(s.capacityPerSlot) || 3
-                }
-            });
-            results.push(rule);
+                });
+                results.push(rule);
+            } catch (err) {
+                console.error(`[HospitalService] Error processing day ${s.dayOfWeek}:`, err);
+                throw err; // Re-throw to inform client
+            }
         }
         return results;
     }

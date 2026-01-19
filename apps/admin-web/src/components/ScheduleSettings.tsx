@@ -77,8 +77,9 @@ export const ScheduleSettings = () => {
         try {
             await updateDepartmentSchedule(selectedDeptId, schedules);
             alert('✅ 근무 시간이 저장되었습니다.');
-        } catch (e) {
-            alert('저장 실패');
+        } catch (e: any) {
+            console.error(e);
+            alert(`저장 실패: ${e.response?.data?.message || e.message}`);
         }
     };
 
@@ -137,7 +138,7 @@ export const ScheduleSettings = () => {
                                 <option value={60}>60분</option>
                             </select>
                         </div>
-                        <div className="px-1"><input type="number" disabled={s.isHoliday} value={s.capacityPerSlot} onChange={(e) => handleUpdate(idx, 'capacityPerSlot', e.target.value)} className="w-full border p-1 rounded text-center" /></div>
+                        <div className="px-1"><input type="number" disabled={s.isHoliday} value={s.capacityPerSlot} onChange={(e) => handleUpdate(idx, 'capacityPerSlot', Number(e.target.value))} className="w-full border p-1 rounded text-center" /></div>
                         <div className="text-center flex justify-center">
                             <input
                                 type="checkbox"
